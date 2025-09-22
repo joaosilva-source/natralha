@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
- * VERSION: v1.3.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+ * VERSION: v1.3.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -1455,7 +1455,7 @@ const ProcessosPage = () => {
                 setLoading(true);
                 
                 // Consultar Apps Script para as 10 perguntas mais frequentes
-                const response = await fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getTop10FrequentQuestions');
+                const response = await fetch('https://script.google.com/macros/s/AKfycbyoUavv7Px8Bngom5aJMxUvaqt4LbTQjAMtnbUBeqpZNu8P-m_682jECrudyDaYSYG9Sg/exec?action=getTop10FrequentQuestions');
                 const data = await response.json();
                 
                 console.log('Top 10 FAQ carregado:', data);
