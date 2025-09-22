@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.0.5 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.0.6 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -26,13 +26,22 @@ app.use(cors({
   origin: [
     'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
     'https://velohub-v3-278491073220.us-east1.run.app',
-    'https://velohub-*.us-east1.run.app', // Wildcard para todas as revisões
+    'https://velohub-278491073220.us-east1.run.app', // URL específica do Cloud Run
     'http://localhost:3000',
     'http://localhost:5000'
   ],
   credentials: true
 }));
 app.use(express.json());
+
+// Middleware de debug para capturar problemas de JSON
+app.use((req, res, next) => {
+  if (req.path === '/api/chatbot/ask') {
+    console.log('🔍 Debug: Headers recebidos:', JSON.stringify(req.headers, null, 2));
+    console.log('🔍 Debug: Body recebido:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
 
 // Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, 'public')));
@@ -649,6 +658,11 @@ app.post('/api/chatbot/ask', async (req, res) => {
     };
 
     console.log(`✅ Chat V2: Resposta enviada para ${cleanUserId} (${responseSource}${aiProvider ? ` - ${aiProvider}` : ''})`);
+    
+    // Debug: Verificar se há caracteres especiais na resposta
+    const responseString = JSON.stringify(responseData);
+    console.log('🔍 Debug: Resposta JSON:', responseString.substring(0, 200) + '...');
+    console.log('🔍 Debug: Primeiros caracteres:', responseString.substring(0, 10).split('').map(c => c.charCodeAt(0)));
     
     res.json(responseData);
 
