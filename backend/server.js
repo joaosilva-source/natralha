@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.0.3 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.0.4 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -45,8 +45,8 @@ if (!uri) {
   console.warn('⚠️ APIs que dependem do MongoDB não funcionarão');
 }
 const client = uri ? new MongoClient(uri, {
-  serverSelectionTimeoutMS: 5000, // 5 segundos timeout
-  connectTimeoutMS: 10000, // 10 segundos timeout
+  serverSelectionTimeoutMS: 15000, // 15 segundos timeout (otimizado para us-east-1)
+  connectTimeoutMS: 20000, // 20 segundos timeout
   socketTimeoutMS: 45000, // 45 segundos timeout
 }) : null;
 
