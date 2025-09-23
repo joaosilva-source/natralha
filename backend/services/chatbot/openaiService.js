@@ -1,8 +1,8 @@
 // OpenAI Service - Integração com IA para respostas inteligentes
-// VERSION: v2.0.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.0.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-require('dotenv').config();
+const config = require('../../config');
 
 class OpenAIService {
   constructor() {
@@ -18,7 +18,7 @@ class OpenAIService {
   _initializeOpenAI() {
     if (!this.openai && this.isOpenAIConfigured()) {
       this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: config.OPENAI_API_KEY,
       });
     }
     return this.openai;
@@ -29,7 +29,7 @@ class OpenAIService {
    */
   _initializeGemini() {
     if (!this.gemini && this.isGeminiConfigured()) {
-      this.gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      this.gemini = new GoogleGenerativeAI(config.GEMINI_API_KEY);
     }
     return this.gemini;
   }
@@ -131,12 +131,25 @@ Você é o VeloBot, assistente oficial da Velotax. Responda com base no históri
 
     const model = gemini.getGenerativeModel({ model: this.geminiModel });
     
-    // Construir prompt otimizado
-    const prompt = this.buildOptimizedPrompt(question, context, sessionHistory);
+    // Construir prompt completo (system + user) igual ao OpenAI
+    const systemPrompt = `### PERSONA
+Você é o VeloBot, assistente oficial da Velotax. Responda com base no histórico de conversa, no contexto da planilha e nos sites autorizados.
+
+### REGRAS
+- Se a nova pergunta for ambígua, use o histórico para entender o que o atendente quis dizer.
+- Seja direto e claro, mas natural.
+- Se o atendente disser "não entendi", reformule sua última resposta de forma mais simples.
+- Se não encontrar no contexto ou nos sites, diga: "Não encontrei essa informação nem na base de conhecimento nem nos sites oficiais."
+- Sempre responda em português do Brasil.`;
+
+    const userPrompt = this.buildOptimizedPrompt(question, context, sessionHistory);
+    
+    // Combinar system + user prompt para Gemini
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
     
     console.log(`🤖 Gemini: Processando pergunta para usuário ${userId || 'anônimo'}`);
     
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(fullPrompt);
     const response = result.response.text();
     
     console.log(`✅ Gemini: Resposta gerada com sucesso (${response.length} caracteres)`);
@@ -184,7 +197,7 @@ ${context || "Nenhum contexto específico encontrado."}
    * @returns {boolean} Status da configuração
    */
   isOpenAIConfigured() {
-    return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here';
+    return !!config.OPENAI_API_KEY && config.OPENAI_API_KEY !== 'your_openai_api_key_here';
   }
 
   /**
@@ -192,7 +205,7 @@ ${context || "Nenhum contexto específico encontrado."}
    * @returns {boolean} Status da configuração
    */
   isGeminiConfigured() {
-    return !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here';
+    return !!config.GEMINI_API_KEY && config.GEMINI_API_KEY !== 'your_gemini_api_key_here';
   }
 
   /**

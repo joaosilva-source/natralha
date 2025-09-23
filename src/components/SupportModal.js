@@ -1,10 +1,10 @@
 /**
  * VeloHub V3 - Support Modal Component
- * VERSION: v1.0.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.1.0 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState } from 'react';
-import { X, Send, FileText, Bot, GraduationCap, Map, Puzzle, PlusSquare } from 'lucide-react';
+import { X, Send, FileText, Bot, GraduationCap, Map, Puzzle, PlusSquare, User, BookOpen, LifeBuoy } from 'lucide-react';
 
 const SupportModal = ({ isOpen, onClose, type, title }) => {
     const [formData, setFormData] = useState({});
@@ -49,6 +49,9 @@ const SupportModal = ({ isOpen, onClose, type, title }) => {
             case 'roteiro': return <Map size={24} />;
             case 'funcionalidade': return <Puzzle size={24} />;
             case 'recurso': return <PlusSquare size={24} />;
+            case 'gestao': return <User size={24} />;
+            case 'rh_financeiro': return <BookOpen size={24} />;
+            case 'facilities': return <LifeBuoy size={24} />;
             default: return <FileText size={24} />;
         }
     };
@@ -376,6 +379,208 @@ const SupportModal = ({ isOpen, onClose, type, title }) => {
                                 value={formData.descricao || ''}
                                 onChange={(e) => handleInputChange('descricao', e.target.value)}
                                 placeholder="Descreva o recurso adicional necessário"
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'gestao':
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Tipo *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.tipo || ''}
+                                onChange={(e) => handleInputChange('tipo', e.target.value)}
+                            >
+                                <option value="">Selecione o tipo</option>
+                                <option value="solicitacao">Solicitação</option>
+                                <option value="agendamento">Agendamento</option>
+                                <option value="notificacao">Notificação</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Direcionado a *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.direcionado || ''}
+                                onChange={(e) => handleInputChange('direcionado', e.target.value)}
+                            >
+                                <option value="">Selecione o destinatário</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="gestor">Gestor</option>
+                                <option value="backoffice">Backoffice</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Mensagem *
+                            </label>
+                            <textarea
+                                required
+                                rows={6}
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.mensagem || ''}
+                                onChange={(e) => handleInputChange('mensagem', e.target.value)}
+                                placeholder="Digite sua mensagem"
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'rh_financeiro':
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Tipo *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.tipo || ''}
+                                onChange={(e) => handleInputChange('tipo', e.target.value)}
+                            >
+                                <option value="">Selecione o tipo</option>
+                                <option value="solicitacao">Solicitação</option>
+                                <option value="agendamento">Agendamento</option>
+                                <option value="notificacao">Notificação</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Setor *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.setor || ''}
+                                onChange={(e) => handleInputChange('setor', e.target.value)}
+                            >
+                                <option value="">Selecione o setor</option>
+                                <option value="rh">RH</option>
+                                <option value="financeiro">Financeiro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Mensagem *
+                            </label>
+                            <textarea
+                                required
+                                rows={6}
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.mensagem || ''}
+                                onChange={(e) => handleInputChange('mensagem', e.target.value)}
+                                placeholder="Digite sua mensagem"
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'facilities':
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Tipo *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.tipo || ''}
+                                onChange={(e) => handleInputChange('tipo', e.target.value)}
+                            >
+                                <option value="">Selecione o tipo</option>
+                                <option value="reposicao">Reposição</option>
+                                <option value="substituicao">Substituição</option>
+                                <option value="aquisicao">Aquisição</option>
+                                <option value="acesso">Acesso</option>
+                                <option value="manutencao">Manutenção</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Categoria *
+                            </label>
+                            <select
+                                required
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.categoria || ''}
+                                onChange={(e) => handleInputChange('categoria', e.target.value)}
+                            >
+                                <option value="">Selecione a categoria</option>
+                                <option value="computador">Computador</option>
+                                <option value="acessorio">Acessório</option>
+                                <option value="mobilia">Mobília</option>
+                                <option value="item_escritorio">Item de Escritório</option>
+                                <option value="servico">Serviço</option>
+                                <option value="estrutural">Estrutural</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{color: 'var(--cor-texto-principal)'}}>
+                                Mensagem *
+                            </label>
+                            <textarea
+                                required
+                                rows={6}
+                                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                style={{
+                                    backgroundColor: 'var(--cor-container)',
+                                    color: 'var(--cor-texto-principal)',
+                                    borderColor: 'var(--cor-borda)'
+                                }}
+                                value={formData.mensagem || ''}
+                                onChange={(e) => handleInputChange('mensagem', e.target.value)}
+                                placeholder="Digite sua mensagem"
                             />
                         </div>
                     </div>

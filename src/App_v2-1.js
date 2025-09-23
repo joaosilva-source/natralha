@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
- * VERSION: v1.3.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+ * VERSION: v1.3.4 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -942,6 +942,7 @@ const ApoioPage = () => {
     const [activeModal, setActiveModal] = useState(null);
     
     const supportItems = [
+        // Primeira linha
         { 
             name: 'Artigo', 
             icon: <FileText size={40} />, 
@@ -957,19 +958,20 @@ const ApoioPage = () => {
             description: 'Solicite informações ou processos para o VeloBot'
         },
         { 
-            name: 'Treinamento', 
-            icon: <GraduationCap size={40} />, 
-            type: 'treinamento',
-            title: 'Solicitar Treinamento',
-            description: 'Solicite treinamentos e capacitações'
-        }, 
-        { 
             name: 'Roteiro', 
             icon: <Map size={40} />, 
             type: 'roteiro',
             title: 'Solicitar Roteiro',
             description: 'Solicite roteiros e guias passo-a-passo'
         },
+        // Segunda linha
+        { 
+            name: 'Treinamento', 
+            icon: <GraduationCap size={40} />, 
+            type: 'treinamento',
+            title: 'Solicitar Treinamento',
+            description: 'Solicite treinamentos e capacitações'
+        }, 
         { 
             name: 'Funcionalidade', 
             icon: <Puzzle size={40} />, 
@@ -984,6 +986,28 @@ const ApoioPage = () => {
             title: 'Solicitar Recurso Adicional',
             description: 'Solicite recursos adicionais para o sistema'
         },
+        // Terceira linha
+        { 
+            name: 'Gestão', 
+            icon: <User size={40} />, 
+            type: 'gestao',
+            title: 'Solicitar Gestão',
+            description: 'Solicitações, agendamentos e notificações para gestão'
+        },
+        { 
+            name: 'RH e Financeiro', 
+            icon: <BookOpen size={40} />, 
+            type: 'rh_financeiro',
+            title: 'Solicitar RH e Financeiro',
+            description: 'Solicitações para RH ou setor financeiro'
+        },
+        { 
+            name: 'Facilities', 
+            icon: <LifeBuoy size={40} />, 
+            type: 'facilities',
+            title: 'Solicitar Facilities',
+            description: 'Solicitações para facilities e infraestrutura'
+        },
     ];
 
     const handleCardClick = (item) => {
@@ -997,11 +1021,11 @@ const ApoioPage = () => {
     return (
         <div className="container mx-auto px-6 py-12">
             <h1 className="text-center text-4xl font-bold mb-12" style={{color: 'var(--blue-dark)'}}>Precisa de Apoio?</h1>
-            <p className="text-center text-lg mb-8" style={{color: 'var(--cor-texto-secundario)'}}>
-                Selecione o tipo de suporte que você precisa e preencha o formulário correspondente
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {supportItems.map(item => (
+            
+            <div className="space-y-8">
+                {/* Primeira linha - Artigo, Processo, Roteiro */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {supportItems.slice(0, 3).map(item => (
                     <button 
                         key={item.name} 
                         onClick={() => handleCardClick(item)}
@@ -1051,6 +1075,111 @@ const ApoioPage = () => {
                         </p>
                     </button>
                 ))}
+                </div>
+
+                {/* Linha separadora */}
+                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)' }}></div>
+
+                {/* Segunda linha - Treinamento, Funcionalidade, Recurso Adicional */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {supportItems.slice(3, 6).map(item => (
+                    <button 
+                        key={item.name} 
+                        onClick={() => handleCardClick(item)}
+                        className="p-8 rounded-lg flex flex-col items-center justify-center velohub-card" 
+                        style={{
+                            borderRadius: '16px',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                            transition: 'box-shadow 0.3s ease, border 0.3s ease, transform 0.3s ease',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            width: '100%',
+                            height: 'auto'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                            e.currentTarget.style.outline = '2px solid var(--blue-medium)';
+                            e.currentTarget.style.outlineOffset = '-2px';
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            // Barra superior animada
+                            e.currentTarget.style.setProperty('--bar-width', '100%');
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+                            e.currentTarget.style.outline = 'none';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            // Barra superior desaparece
+                            e.currentTarget.style.setProperty('--bar-width', '0%');
+                        }}
+                    >
+                        {/* Barra Superior Animada */}
+                        <div 
+                            className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
+                            style={{
+                                width: 'var(--bar-width, 0%)',
+                                '--bar-width': '0%'
+                            }}></div>
+                        <div className="text-blue-500 dark:text-blue-400 mb-4">{item.icon}</div>
+                        <span className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">{item.name}</span>
+                        <p className="text-sm text-center" style={{color: 'var(--cor-texto-secundario)'}}>
+                            {item.description}
+                        </p>
+                    </button>
+                ))}
+                </div>
+
+                {/* Linha separadora */}
+                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)' }}></div>
+
+                {/* Terceira linha - Gestão, RH e Financeiro, Facilities */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {supportItems.slice(6, 9).map(item => (
+                    <button 
+                        key={item.name} 
+                        onClick={() => handleCardClick(item)}
+                        className="p-8 rounded-lg flex flex-col items-center justify-center velohub-card" 
+                        style={{
+                            borderRadius: '16px',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                            transition: 'box-shadow 0.3s ease, border 0.3s ease, transform 0.3s ease',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            width: '100%',
+                            height: 'auto'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
+                            e.currentTarget.style.outline = '2px solid var(--blue-medium)';
+                            e.currentTarget.style.outlineOffset = '-2px';
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            // Barra superior animada
+                            e.currentTarget.style.setProperty('--bar-width', '100%');
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+                            e.currentTarget.style.outline = 'none';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            // Barra superior desaparece
+                            e.currentTarget.style.setProperty('--bar-width', '0%');
+                        }}
+                    >
+                        {/* Barra Superior Animada */}
+                        <div 
+                            className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
+                            style={{
+                                width: 'var(--bar-width, 0%)',
+                                '--bar-width': '0%'
+                            }}></div>
+                        <div className="text-blue-500 dark:text-blue-400 mb-4">{item.icon}</div>
+                        <span className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">{item.name}</span>
+                        <p className="text-sm text-center" style={{color: 'var(--cor-texto-secundario)'}}>
+                            {item.description}
+                        </p>
+                    </button>
+                ))}
+                </div>
             </div>
 
             {/* Modal */}
@@ -1454,20 +1583,20 @@ const ProcessosPage = () => {
             try {
                 setLoading(true);
                 
-                // Consultar Apps Script para as 10 perguntas mais frequentes
-                const response = await fetch('https://script.google.com/macros/s/AKfycbyoUavv7Px8Bngom5aJMxUvaqt4LbTQjAMtnbUBeqpZNu8P-m_682jECrudyDaYSYG9Sg/exec?action=getTop10FrequentQuestions');
-                const data = await response.json();
+                // Usar novo endpoint do backend para Top 10 FAQ
+                const response = await fetch('/api/faq/top10');
+                const result = await response.json();
                 
-                console.log('Top 10 FAQ carregado:', data);
+                console.log('Top 10 FAQ carregado:', result);
                 
-                if (data && data.length > 0) {
-                    setFaq(data);
+                if (result.success && result.data && result.data.length > 0) {
+                    setFaq(result.data);
                 } else {
                     console.warn('⚠️ Nenhuma pergunta frequente encontrada');
                     setFaq([]);
                 }
             } catch (error) {
-                console.error('Erro ao carregar Top 10 FAQ do Apps Script:', error);
+                console.error('Erro ao carregar Top 10 FAQ do backend:', error);
                 console.log('📋 Usando fallback para FAQ padrão...');
                 
                 // Fallback para FAQ padrão se Apps Script falhar

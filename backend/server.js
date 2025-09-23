@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.0.8 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.0.9 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -133,6 +133,80 @@ app.get('/api/test', async (req, res) => {
     res.json({ success: true, message: 'Conexão com MongoDB OK!' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Test chatbot endpoint
+app.get('/api/chatbot/test', async (req, res) => {
+  try {
+    const config = require('./config');
+    
+    res.json({
+      success: true,
+      data: {
+        openai_configured: config.OPENAI_API_KEY !== 'your_openai_api_key_here',
+        gemini_configured: config.GEMINI_API_KEY !== 'your_gemini_api_key_here',
+        mongodb_configured: !!config.MONGODB_URI,
+        environment: config.NODE_ENV
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint para Top 10 FAQ (substitui Google Apps Script)
+app.get('/api/faq/top10', async (req, res) => {
+  try {
+    console.log('📋 Buscando Top 10 FAQ do MongoDB...');
+    
+    // Tentar conectar ao MongoDB
+    const client = await connectToMongo();
+    if (!client) {
+      return res.status(503).json({
+        success: false,
+        error: 'MongoDB não disponível',
+        data: []
+      });
+    }
+    
+    const db = client.db('console_conteudo');
+    const faqCollection = db.collection('Bot_perguntas');
+    
+    // Buscar todas as perguntas
+    const faqData = await faqCollection.find({}).toArray();
+    
+    if (!faqData || faqData.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    // Simular frequência baseada em posição (temporário)
+    // Em produção, isso deveria vir de logs de uso real
+    const top10FAQ = faqData.slice(0, 10).map((item, index) => ({
+      pergunta: item.Pergunta || item.pergunta || 'Pergunta não disponível',
+      frequencia: Math.max(100 - (index * 10), 10), // Simular frequência decrescente
+      _id: item._id,
+      palavrasChave: item["Palavras-chave"] || item.palavras_chave || '',
+      sinonimos: item.Sinonimos || item.sinonimos || ''
+    }));
+    
+    console.log(`✅ Top 10 FAQ carregado: ${top10FAQ.length} perguntas`);
+    
+    res.json({
+      success: true,
+      data: top10FAQ
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar Top 10 FAQ:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      data: []
+    });
   }
 });
 
@@ -629,7 +703,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
     } else {
       // Fallback para FAQ se nenhuma IA estiver configurada
       if (searchResults.faq) {
-        response = searchResults.faq.answer;
+        response = searchResults.faq.resposta || searchResults.faq.answer || 'Resposta encontrada na base de conhecimento.';
         responseSource = 'faq';
         console.log(`✅ Chat V2: Resposta do FAQ (IA não configurada)`);
         

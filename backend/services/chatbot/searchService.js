@@ -1,5 +1,5 @@
 // Search Service - Busca inteligente em FAQ e Artigos
-// VERSION: v2.0.2 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.0.3 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const cosineSimilarity = require('cosine-similarity');
 const axios = require('axios');
 
@@ -140,12 +140,19 @@ class SearchService {
     const texts = [];
     
     // Para FAQ (estrutura MongoDB: Bot_perguntas)
+    if (item.Pergunta) texts.push(item.Pergunta);
+    if (item["Palavras-chave"]) texts.push(item["Palavras-chave"]);
+    if (item.Sinonimos) texts.push(item.Sinonimos);
+    if (item.Resposta) texts.push(item.Resposta.substring(0, 300)); // Primeiros 300 chars da resposta
+    
+    // Fallback para estrutura antiga (minúsculas)
     if (item.pergunta) texts.push(item.pergunta);
     if (item.palavras_chave) texts.push(item.palavras_chave);
+    if (item.sinonimos) texts.push(item.sinonimos);
+    if (item.resposta) texts.push(item.resposta.substring(0, 300));
     if (item.categoria) texts.push(item.categoria);
-    if (item.resposta) texts.push(item.resposta.substring(0, 300)); // Primeiros 300 chars da resposta
     
-    // Fallback para estrutura antiga
+    // Fallback para estrutura ainda mais antiga
     if (item.question) texts.push(item.question);
     if (item.context) texts.push(item.context);
     if (item.keywords) {
@@ -281,9 +288,9 @@ class SearchService {
   }
 
   /**
-   * Sistema de desduplicação e menu de esclarecimento (baseado no chatbot Vercel)
+   * Sistema de desduplicação e menu de esclarecimento (adaptado para MongoDB)
    * @param {string} question - Pergunta do usuário
-   * @param {Array} faqData - Dados do FAQ
+   * @param {Array} faqData - Dados do FAQ do MongoDB
    * @returns {Object} Resultado com desduplicação e opções de esclarecimento
    */
   findMatchesWithDeduplication(question, faqData) {
@@ -291,36 +298,43 @@ class SearchService {
       return { matches: [], needsClarification: false };
     }
 
-    const cabecalho = faqData[0];
-    const dados = faqData.slice(1);
-    const idxPergunta = cabecalho.indexOf("Pergunta");
-    const idxPalavrasChave = cabecalho.indexOf("Palavras-chave");
-    const idxResposta = cabecalho.indexOf("Resposta");
-
-    if (idxPergunta === -1 || idxResposta === -1 || idxPalavrasChave === -1) {
-      console.error("❌ Search: Colunas essenciais não encontradas");
-      return { matches: [], needsClarification: false };
-    }
-
     const palavrasDaBusca = this.normalizeText(question).split(' ').filter(p => p.length > 2);
     let todasAsCorrespondencias = [];
 
-    for (let i = 0; i < dados.length; i++) {
-      const linhaAtual = dados[i];
-      const textoPalavrasChave = this.normalizeText(linhaAtual[idxPalavrasChave] || '');
+    // Processar cada documento do MongoDB
+    for (let i = 0; i < faqData.length; i++) {
+      const documento = faqData[i];
+      
+      // Extrair campos do documento MongoDB
+      const pergunta = documento.Pergunta || documento.pergunta || '';
+      const resposta = documento.Resposta || documento.resposta || '';
+      const palavrasChave = documento["Palavras-chave"] || documento.palavras_chave || documento.palavrasChave || '';
+      const sinonimos = documento.Sinonimos || documento.sinonimos || '';
+      
+      // Combinar palavras-chave e sinônimos para busca
+      const textoBusca = `${palavrasChave} ${sinonimos}`.toLowerCase();
       let relevanceScore = 0;
       
+      // Calcular score baseado nas palavras da busca
       palavrasDaBusca.forEach(palavra => {
-        if (textoPalavrasChave.includes(palavra)) relevanceScore++;
+        if (textoBusca.includes(palavra.toLowerCase())) {
+          relevanceScore++;
+        }
+        // Bonus para match na pergunta
+        if (pergunta.toLowerCase().includes(palavra.toLowerCase())) {
+          relevanceScore += 0.5;
+        }
       });
       
       if (relevanceScore > 0) {
         todasAsCorrespondencias.push({
-          resposta: linhaAtual[idxResposta],
-          perguntaOriginal: linhaAtual[idxPergunta],
-          sourceRow: i + 2,
+          resposta: resposta,
+          perguntaOriginal: pergunta,
+          sourceRow: i + 1,
           score: relevanceScore,
-          tabulacoes: linhaAtual[3] || null
+          _id: documento._id,
+          palavrasChave: palavrasChave,
+          sinonimos: sinonimos
         });
       }
     }
