@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
- * VERSION: v1.3.4 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+ * VERSION: v1.3.5 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -1022,7 +1022,7 @@ const ApoioPage = () => {
         <div className="container mx-auto px-6 py-12">
             <h1 className="text-center text-4xl font-bold mb-12" style={{color: 'var(--blue-dark)'}}>Precisa de Apoio?</h1>
             
-            <div className="space-y-8">
+            <div className="space-y-4">
                 {/* Primeira linha - Artigo, Processo, Roteiro */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {supportItems.slice(0, 3).map(item => (
@@ -1078,7 +1078,7 @@ const ApoioPage = () => {
                 </div>
 
                 {/* Linha separadora */}
-                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)' }}></div>
+                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)', opacity: 0.5 }}></div>
 
                 {/* Segunda linha - Treinamento, Funcionalidade, Recurso Adicional */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1130,7 +1130,7 @@ const ApoioPage = () => {
                 </div>
 
                 {/* Linha separadora */}
-                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)' }}></div>
+                <div className="w-full h-px" style={{ backgroundColor: 'var(--cor-borda)', opacity: 0.5 }}></div>
 
                 {/* Terceira linha - Gestão, RH e Financeiro, Facilities */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

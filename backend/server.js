@@ -10,7 +10,7 @@ const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 // Importar serviços do chatbot
-// VERSION: v2.0.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.0.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const openaiService = require('./services/chatbot/openaiService');
 const searchService = require('./services/chatbot/searchService');
 const sessionService = require('./services/chatbot/sessionService');
@@ -736,27 +736,25 @@ app.post('/api/chatbot/ask', async (req, res) => {
     // Preparar resposta para o frontend
     const responseData = {
       success: true,
-      data: {
-        messageId: messageId,
-        response: response,
-        source: responseSource,
-        aiProvider: aiProvider,
-        sessionId: session.id,
-        suggestedArticles: searchResults.articles.slice(0, 3).map(article => ({
-          id: article._id,
-          title: article.title,
-          content: article.content.substring(0, 150) + '...',
-          relevanceScore: article.relevanceScore
-        })),
-        faqUsed: searchResults.faq ? {
-          id: searchResults.faq._id,
-          question: searchResults.faq.question,
-          answer: searchResults.faq.answer,
-          relevanceScore: searchResults.faq.relevanceScore
-        } : null,
-        sitesUsed: false, // Sites externos removidos
-        timestamp: new Date().toISOString()
-      }
+      messageId: messageId,
+      response: response,
+      source: responseSource,
+      aiProvider: aiProvider,
+      sessionId: session.id,
+      articles: searchResults.articles.slice(0, 3).map(article => ({
+        id: article._id,
+        title: article.title,
+        content: article.content.substring(0, 150) + '...',
+        relevanceScore: article.relevanceScore
+      })),
+      faqUsed: searchResults.faq ? {
+        id: searchResults.faq._id,
+        question: searchResults.faq.question,
+        answer: searchResults.faq.answer,
+        relevanceScore: searchResults.faq.relevanceScore
+      } : null,
+      sitesUsed: false, // Sites externos removidos
+      timestamp: new Date().toISOString()
     };
 
     console.log(`✅ Chat V2: Resposta enviada para ${cleanUserId} (${responseSource}${aiProvider ? ` - ${aiProvider}` : ''})`);
