@@ -985,9 +985,9 @@ app.post('/api/chatbot/ai-response', async (req, res) => {
       context += `\n\nConteúdo do artigo relacionado: ${articleContent}`;
     }
 
-    // Obter histórico da sessão se disponível
-    const session = sessionService.getSession(cleanSessionId);
-    const sessionHistory = session ? session.messages.slice(-10) : [];
+    // Obter ou criar sessão se disponível
+    const session = cleanSessionId ? sessionService.getOrCreateSession(cleanUserId, cleanSessionId) : null;
+    const sessionHistory = session ? sessionService.getSessionHistory(session.id) : [];
 
     // Gerar resposta conversacional da IA
     const aiResult = await aiService.generateResponse(

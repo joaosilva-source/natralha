@@ -1,5 +1,5 @@
 // Search Service - Busca inteligente em Bot_perguntas e Artigos
-// VERSION: v2.2.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.2.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const cosineSimilarity = require('cosine-similarity');
 
 class SearchService {
@@ -88,7 +88,7 @@ class SearchService {
       for (const article of articlesData) {
         const score = this.calculateRelevanceScore(questionWords, article);
         
-        if (score > 0.2) { // Threshold mais baixo para artigos
+        if (score > 0.05) { // Threshold reduzido para artigos (mesmo do Bot_perguntas)
           relevantArticles.push({
             ...article,
             relevanceScore: score
