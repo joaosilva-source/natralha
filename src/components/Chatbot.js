@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.0.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.1.0 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -50,6 +50,89 @@ const Chatbot = ({ prompt }) => {
         }
     }, [messages, isTyping]);
 
+    // Função para chamar o botão IA
+    const handleAIButton = async (question, botPerguntaResponse, articleContent) => {
+        try {
+            console.log('🤖 AI Button: Enviando solicitação para resposta conversacional');
+            
+            const response = await fetch(`${API_BASE_URL}/chatbot/ai-response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    botPerguntaResponse: botPerguntaResponse,
+                    articleContent: articleContent,
+                    userId: userId,
+                    sessionId: sessionId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro na API: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('✅ AI Button: Resposta conversacional recebida:', data);
+
+                // Adicionar resposta da IA como nova mensagem
+                const aiMessage = {
+                    id: Date.now() + Math.random(),
+                    text: data.response,
+                    sender: 'bot',
+                    feedbackState: 'pending',
+                    source: 'ai_button',
+                    aiProvider: data.aiProvider,
+                    timestamp: data.timestamp
+                };
+
+                setMessages(prev => [...prev, aiMessage]);
+
+                // Log da atividade
+                try {
+                    await fetch(`${API_BASE_URL}/chatbot/activity`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'ai_button_used',
+                            details: {
+                                originalQuestion: question,
+                                aiProvider: data.aiProvider,
+                                responseLength: data.response ? data.response.length : 0
+                            },
+                            userId: userId,
+                            sessionId: sessionId
+                        })
+                    });
+                } catch (activityError) {
+                    console.warn('⚠️ AI Button: Erro ao logar atividade:', activityError);
+                }
+
+            } else {
+                throw new Error(data.error || 'Erro desconhecido na API');
+            }
+
+        } catch (error) {
+            console.error('❌ AI Button: Erro ao enviar solicitação:', error);
+            
+            // Fallback para resposta de erro
+            const errorMessage = {
+                id: Date.now() + Math.random(),
+                text: 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.',
+                sender: 'bot',
+                feedbackState: 'pending',
+                source: 'ai_button_error'
+            };
+
+            setMessages(prev => [...prev, errorMessage]);
+        }
+    };
+
     // Função para enviar mensagem para a nova API inteligente
     const handleSendMessage = async (text) => {
         try {
@@ -98,7 +181,13 @@ const Chatbot = ({ prompt }) => {
                     sender: 'bot',
                     feedbackState: 'pending',
                     source: data.source,
-                    timestamp: data.timestamp
+                    timestamp: data.timestamp,
+                    // Dados para o botão IA
+                    originalQuestion: trimmedInput,
+                    botPerguntaResponse: data.response,
+                    articleContent: data.articles && data.articles.length > 0 ? data.articles[0].content : null,
+                    hasArticle: data.articles && data.articles.length > 0,
+                    articleId: data.articles && data.articles.length > 0 ? data.articles[0].id : null
                 };
 
                 let finalMessages = [...newMessages, botMessage];
@@ -228,14 +317,22 @@ const Chatbot = ({ prompt }) => {
                 })
             });
 
-            // Abrir modal de artigo
-            setSelectedArticle(article);
-            console.log('📖 Chatbot: Modal de artigo aberto para:', article.title);
+            // Navegar para a aba Artigos e abrir o modal
+            // Disparar evento customizado para mudar de aba
+            const event = new CustomEvent('navigateToArticles', {
+                detail: { articleId: article.id }
+            });
+            window.dispatchEvent(event);
+            
+            console.log('📖 Chatbot: Navegando para aba Artigos com artigo:', article.title);
 
         } catch (error) {
             console.error('❌ Chatbot: Erro ao logar visualização de artigo:', error);
-            // Mesmo com erro no log, abrir o modal
-            setSelectedArticle(article);
+            // Mesmo com erro no log, navegar para a aba
+            const event = new CustomEvent('navigateToArticles', {
+                detail: { articleId: article.id }
+            });
+            window.dispatchEvent(event);
         }
     };
 
@@ -322,6 +419,33 @@ const Chatbot = ({ prompt }) => {
                                         {backgroundColor: 'var(--cor-container)', color: 'var(--cor-texto-principal)', border: '1px solid var(--cor-borda)'}
                                      }>
                                     <p>{msg.text}</p>
+                                    
+                                    {/* Botão IA - Canto inferior direito */}
+                                    {msg.sender === 'bot' && msg.originalQuestion && (
+                                        <div className="flex justify-end mt-2">
+                                            <button 
+                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent)}
+                                                className="p-2 transition-all duration-200 hover:scale-105"
+                                                style={{
+                                                    backgroundColor: 'var(--blue-medium)',
+                                                    borderRadius: '50%',
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                title="Obter resposta conversacional da IA"
+                                            >
+                                                <img 
+                                                    src="/Gemini_SparkIcon_.width-500.format-webp-Photoroom.png" 
+                                                    alt="IA Gemini" 
+                                                    style={{ width: '20px', height: '20px' }}
+                                                />
+                                            </button>
+                                        </div>
+                                    )}
+                                    
                                     {msg.feedbackState === 'pending' && (
                                         <div className="flex gap-2 mt-2">
                                             <button onClick={() => handleFeedback(msg.id, 'positive')} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsUp size={16}/></button>

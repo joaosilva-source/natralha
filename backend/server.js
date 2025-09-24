@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.1.1 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.2.0 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -937,6 +937,102 @@ app.post('/api/chatbot/activity', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// API do Botão IA - Resposta Conversacional
+app.post('/api/chatbot/ai-response', async (req, res) => {
+  try {
+    const { question, botPerguntaResponse, articleContent, userId, sessionId } = req.body;
+
+    if (!question || !botPerguntaResponse) {
+      return res.status(400).json({
+        success: false,
+        error: 'Pergunta e resposta do Bot_perguntas são obrigatórias'
+      });
+    }
+
+    const cleanUserId = userId || 'anonymous';
+    const cleanSessionId = sessionId || null;
+
+    console.log(`🤖 AI Button: Nova solicitação de ${cleanUserId} para resposta conversacional`);
+
+    // Verificar se IA está configurada
+    if (!aiService.isConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Serviço de IA não configurado',
+        response: 'Desculpe, o serviço de IA não está disponível no momento.'
+      });
+    }
+
+    // Construir contexto para a IA
+    let context = `Resposta do Bot_perguntas: ${botPerguntaResponse}`;
+    
+    if (articleContent) {
+      context += `\n\nConteúdo do artigo relacionado: ${articleContent}`;
+    }
+
+    // Obter histórico da sessão se disponível
+    const session = sessionService.getSession(cleanSessionId);
+    const sessionHistory = session ? session.messages.slice(-10) : [];
+
+    // Gerar resposta conversacional da IA
+    const aiResult = await aiService.generateResponse(
+      question,
+      context,
+      sessionHistory,
+      cleanUserId,
+      cleanUserId
+    );
+
+    if (!aiResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao gerar resposta da IA',
+        response: aiResult.response
+      });
+    }
+
+    // Adicionar mensagem à sessão
+    if (session) {
+      sessionService.addMessage(session.id, 'bot', aiResult.response, {
+        timestamp: new Date(),
+        source: 'ai_button',
+        aiProvider: aiResult.provider,
+        botPerguntaUsed: null,
+        articlesUsed: [],
+        sitesUsed: false
+      });
+    }
+
+    // Log da atividade
+    await userActivityLogger.logQuestion(cleanUserId, `AI Button: ${question}`, cleanSessionId);
+
+    // Resposta de sucesso
+    const responseData = {
+      success: true,
+      response: aiResult.response,
+      aiProvider: aiResult.provider,
+      model: aiResult.model,
+      source: 'ai_button',
+      timestamp: new Date().toISOString(),
+      sessionId: cleanSessionId
+    };
+
+    console.log(`✅ AI Button: Resposta conversacional gerada por ${aiResult.provider} para ${cleanUserId}`);
+    
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('❌ AI Button Error:', error.message);
+    
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      response: 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
