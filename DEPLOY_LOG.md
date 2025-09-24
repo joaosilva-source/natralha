@@ -3,6 +3,29 @@
 
 ## 🚀 **DEPLOYS E PUSHES REALIZADOS**
 
+### **GitHub Push - Refatoração Completa do Sistema de Chatbot**
+- **Data/Hora**: 2025-01-27 20:30:00
+- **Tipo**: GitHub Push
+- **Versão**: aiService v2.1.0, searchService v2.1.0, feedbackService v2.1.0, server v1.1.0
+- **Commit**: 1f1af0b
+- **Arquivos Modificados**: 
+  - `backend/services/chatbot/openaiService.js` → `aiService.js` (v2.1.0 - migração completa)
+  - `backend/services/chatbot/searchService.js` (v2.1.0 - nomenclatura FAQ → Bot_perguntas)
+  - `backend/services/chatbot/feedbackService.js` (v2.1.0 - MongoDB → Google Sheets)
+  - `backend/services/chatbot/logsService.js` (remoção função logSiteResponse)
+  - `backend/server.js` (v1.1.0 - atualizações de nomenclatura)
+  - `backend/config.js` (v1.1.0 - remoção EXTERNAL_API_TIMEOUT)
+  - `backend/package.json` (remoção dependência axios)
+- **Arquivos Novos**:
+  - `ANALISE CHATBOT.md` (documentação completa do sistema)
+  - `ANALISE_SEGURANCA_CREDENTIALS.md` (análise de segurança)
+  - `CONFIGURACAO_CHAVES_API.md` (configuração de APIs)
+  - `env-seguro.txt` (template de variáveis seguras)
+  - `env-template.txt` (template completo de variáveis)
+- **Arquivos Removidos**:
+  - `backend/test_chatbot_fixed.js` (teste com axios)
+- **Descrição**: Refatoração completa do sistema de chatbot - migração de nomenclatura (FAQ → Bot_perguntas), remoção de APIs externas, migração de feedback para Google Sheets, correção de prompts, documentação completa
+
 ### **GitHub Push - Reorganização Aba Apoio e Correções Chatbot**
 - **Data/Hora**: 2025-01-27 18:45:00
 - **Tipo**: GitHub Push
