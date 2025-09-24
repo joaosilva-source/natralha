@@ -159,6 +159,18 @@
 
 ---
 
+### **GitHub Push - Sistema de Análise Inteligente com IA**
+- **Data/Hora**: 2025-01-27 23:55:00
+- **Tipo**: GitHub Push
+- **Versão**: aiService v2.4.0, searchService v2.3.0, server v1.3.0
+- **Commit**: 3f45eb1
+- **Arquivos Modificados**: 
+  - `backend/services/chatbot/aiService.js` (v2.4.0 - analyzeQuestionWithAI, análise semântica)
+  - `backend/services/chatbot/searchService.js` (v2.3.0 - generateClarificationMenuFromAI)
+  - `backend/server.js` (v1.3.0 - fluxo inteligente com IA, fallback tradicional)
+- **Descrição**: Sistema de análise inteligente com IA - IA analisa pergunta vs base de dados (perguntas, palavras-chave, sinônimos), fluxo inteligente: 1 opção relevante → resposta direta, múltiplas opções → menu esclarecimento, fallback para busca tradicional se IA falhar, resolve problema de perguntas sem resposta com análise contextual e semântica
+- **Status**: ✅ Concluído com sucesso
+
 ### **GitHub Push - Implementação de Botões de Formatação WhatsApp e E-mail**
 - **Data/Hora**: 2025-01-27 23:45:00
 - **Tipo**: GitHub Push

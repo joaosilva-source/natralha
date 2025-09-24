@@ -628,7 +628,10 @@ app.post('/api/chatbot/ask', async (req, res) => {
     
     if (aiService.isConfigured()) {
       console.log(`🤖 Chat V2: Usando análise inteligente da IA para: "${cleanQuestion}"`);
+      console.log(`🔍 Chat V2: Total de perguntas na base: ${botPerguntasData.length}`);
+      console.log(`🔍 Chat V2: IA configurada - Gemini: ${aiService.isGeminiConfigured()}, OpenAI: ${aiService.isOpenAIConfigured()}`);
       aiAnalysis = await aiService.analyzeQuestionWithAI(cleanQuestion, botPerguntasData);
+      console.log(`🔍 Chat V2: Resultado da análise IA:`, JSON.stringify(aiAnalysis, null, 2));
       
       if (aiAnalysis.error) {
         console.warn('⚠️ Chat V2: Análise da IA falhou, usando busca tradicional:', aiAnalysis.error);

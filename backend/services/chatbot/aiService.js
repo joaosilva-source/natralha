@@ -1,5 +1,5 @@
 // AI Service - Integração híbrida com IA para respostas inteligentes
-// VERSION: v2.4.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.4.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../../config');
@@ -117,6 +117,7 @@ class AIService {
 - Use português brasileiro claro e objetivo
 - As interações esperadas são de chunho textual, sem adicionar informações genéricas, criadas, ou realizar pesquisas externas.
 - Apenas os conhecimentos fornecidos são válidos. Não invente informações.
+- NÃO use conhecimento externo ou associações que não estejam nos dados fornecidos.
 - Se a resposta contiver muitos termos técnicos, simplifique para um nível de fácil compreensão.
 - Se não souber, diga: "Não encontrei essa informação na base de conhecimento disponível"
 
@@ -250,8 +251,11 @@ class AIService {
 
       const analysisPrompt = `# ANALISADOR DE PERGUNTAS - VELOBOT
 
-## SUA TAREFA
-Analise a pergunta do usuário e identifique quais opções da base de dados são relevantes.
+## REGRAS CRÍTICAS - LEIA COM ATENÇÃO
+- Use APENAS as informações fornecidas na base de dados
+- NÃO faça associações externas ou use conhecimento próprio
+- NÃO invente conexões que não existem nos dados
+- Se não houver match claro, retorne vazio
 
 ## PERGUNTA DO USUÁRIO
 "${question}"
@@ -260,20 +264,20 @@ Analise a pergunta do usuário e identifique quais opções da base de dados sã
 ${contextData}
 
 ## INSTRUÇÕES
-1. Analise a pergunta do usuário
-2. Compare com perguntas, palavras-chave e sinônimos da base
-3. Identifique as 3-8 opções mais relevantes
-4. Retorne APENAS os números das opções relevantes
+1. Compare APENAS com as perguntas, palavras-chave e sinônimos fornecidos
+2. Identifique APENAS matches diretos e óbvios
+3. Se não houver match claro, retorne vazio
+4. Retorne APENAS os números das opções com match direto
 
 ## FORMATO DE RESPOSTA
-Responda APENAS com os números das opções relevantes, separados por vírgula.
-Exemplo: 1, 3, 7, 12
+Responda APENAS com os números das opções com match direto, separados por vírgula.
+Se não houver match, responda: NENHUM
 
-## CRITÉRIOS DE RELEVÂNCIA
-- Match exato ou similar na pergunta
-- Palavras-chave relacionadas
-- Sinônimos relevantes
-- Contexto semântico similar
+## CRITÉRIOS DE RELEVÂNCIA (RESTRITIVOS)
+- Match exato na pergunta
+- Palavras-chave idênticas
+- Sinônimos exatos fornecidos
+- NÃO use conhecimento externo
 
 ## RESPOSTA:`;
 
@@ -284,7 +288,14 @@ Exemplo: 1, 3, 7, 12
       const response = result.response.text().trim();
       
       console.log(`🤖 AI Analyzer: Resposta da IA: "${response}"`);
+      console.log(`🔍 AI Analyzer: Tamanho da resposta: ${response.length} caracteres`);
       
+      // Verificar se a IA retornou "NENHUM" (sem matches)
+      if (response.toUpperCase().includes('NENHUM') || response.trim() === '') {
+        console.log('❌ AI Analyzer: IA retornou NENHUM - nenhuma opção relevante identificada');
+        return { relevantOptions: [], needsClarification: false };
+      }
+
       // Extrair números da resposta
       const relevantIndices = response.match(/\d+/g);
       if (!relevantIndices || relevantIndices.length === 0) {
