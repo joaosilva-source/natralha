@@ -54,6 +54,13 @@ const Chatbot = ({ prompt }) => {
     const handleAIButton = async (question, botPerguntaResponse, articleContent) => {
         try {
             console.log('🤖 AI Button: Enviando solicitação para resposta conversacional');
+            console.log('🤖 AI Button: Dados sendo enviados:', {
+                question: question ? 'presente' : 'ausente',
+                botPerguntaResponse: botPerguntaResponse ? 'presente' : 'ausente',
+                articleContent: articleContent ? 'presente' : 'ausente',
+                userId: userId || 'não fornecido',
+                sessionId: sessionId || 'não fornecido'
+            });
             
             const response = await fetch(`${API_BASE_URL}/chatbot/ai-response`, {
                 method: 'POST',

@@ -3,6 +3,20 @@
 
 ## 🚀 **DEPLOYS E PUSHES REALIZADOS**
 
+### **GitHub Push - Atualização do Chatbot: Melhorias no Backend e Frontend**
+- **Data/Hora**: 2025-01-27 21:15:00
+- **Tipo**: GitHub Push
+- **Versão**: v1.2.0
+- **Commit**: 99be581
+- **Arquivos Modificados**: 
+  - `backend/server.js` (melhorias no sistema de chatbot)
+  - `backend/services/chatbot/aiService.js` (atualizações no serviço de IA)
+  - `src/components/Chatbot.js` (melhorias na interface do chatbot)
+- **Arquivos Novos**:
+  - `public/Gemini_SparkIcon_.width-500.format-webp-Photoroom.png` (novo ícone)
+- **Descrição**: Atualizações gerais no sistema de chatbot com melhorias no backend e frontend, incluindo novo ícone do Gemini
+- **Status**: ✅ Concluído com sucesso
+
 ### **GitHub Push - Refatoração Completa do Sistema de Chatbot**
 - **Data/Hora**: 2025-01-27 20:30:00
 - **Tipo**: GitHub Push
