@@ -159,4 +159,21 @@
 
 ---
 
+### **GitHub Push - Implementação Completa de Melhorias no Sistema de IA**
+- **Data/Hora**: 2025-01-27 22:30:00
+- **Tipo**: GitHub Push
+- **Versão**: aiService v2.2.0, searchService v2.2.1, logsService v1.1.0, server v1.2.1
+- **Commit**: 0f5a06c
+- **Arquivos Modificados**: 
+  - `backend/services/chatbot/aiService.js` (v2.2.0 - persona centralizada, contexto estruturado, validação)
+  - `backend/services/chatbot/searchService.js` (v2.2.1 - correção source "Bot_perguntas")
+  - `backend/services/chatbot/logsService.js` (v1.1.0 - nomenclatura MongoDB, função renomeada)
+  - `backend/server.js` (v1.2.1 - integração com nova função logMongoDBResponse)
+- **Arquivos Removidos**:
+  - `chatbot-vercel/` (pasta resquício da migração)
+- **Descrição**: Implementação completa de melhorias no sistema de IA - persona centralizada eliminando duplicação, estrutura hierárquica clara, contexto estruturado com informações organizadas, prompt otimizado com instruções específicas, parâmetros otimizados (temperature: 0.1, max_tokens: 512), validação de qualidade de resposta, correções de nomenclatura (Planilha → Bot_perguntas), função logSpreadsheetResponse → logMongoDBResponse, compatibilidade mantida com sistema existente
+- **Status**: ✅ Concluído com sucesso
+
+---
+
 *Log atualizado automaticamente após push para GitHub*

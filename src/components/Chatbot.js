@@ -50,8 +50,8 @@ const Chatbot = ({ prompt }) => {
         }
     }, [messages, isTyping]);
 
-    // Função para chamar o botão IA
-    const handleAIButton = async (question, botPerguntaResponse, articleContent) => {
+    // Função para chamar o botão IA com formatação específica
+    const handleAIButton = async (question, botPerguntaResponse, articleContent, formatType = 'conversational') => {
         try {
             console.log('🤖 AI Button: Enviando solicitação para resposta conversacional');
             console.log('🤖 AI Button: Dados sendo enviados:', {
@@ -72,7 +72,8 @@ const Chatbot = ({ prompt }) => {
                     botPerguntaResponse: botPerguntaResponse,
                     articleContent: articleContent,
                     userId: userId,
-                    sessionId: sessionId
+                    sessionId: sessionId,
+                    formatType: formatType
                 })
             });
 
@@ -488,27 +489,50 @@ const Chatbot = ({ prompt }) => {
                                         </div>
                                     )}
                                     
-                                    {/* Botão IA - Canto inferior direito */}
+                                    {/* Botões IA - WhatsApp e E-mail */}
                                     {msg.sender === 'bot' && msg.originalQuestion && (
-                                        <div className="flex justify-end mt-2">
+                                        <div className="flex justify-end gap-2 mt-2">
+                                            {/* Botão WhatsApp */}
                                             <button 
-                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent)}
-                                                className="p-2 transition-all duration-200 hover:scale-105"
+                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'whatsapp')}
+                                                className="p-1.5 transition-all duration-200 hover:scale-105"
                                                 style={{
-                                                    backgroundColor: 'var(--blue-medium)',
-                                                    borderRadius: '50%',
-                                                    width: '32px',
-                                                    height: '32px',
+                                                    backgroundColor: '#25D366',
+                                                    borderRadius: '8px',
+                                                    width: '28px',
+                                                    height: '28px',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center'
                                                 }}
-                                                title="Obter resposta conversacional da IA"
+                                                title="Formatação para WhatsApp"
                                             >
                                                 <img 
-                                                    src="/Gemini_SparkIcon_.width-500.format-webp-Photoroom.png" 
-                                                    alt="IA Gemini" 
-                                                    style={{ width: '20px', height: '20px' }}
+                                                    src="/wpp logo.png" 
+                                                    alt="WhatsApp" 
+                                                    style={{ width: '16px', height: '16px' }}
+                                                />
+                                            </button>
+                                            
+                                            {/* Botão E-mail */}
+                                            <button 
+                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'email')}
+                                                className="p-1.5 transition-all duration-200 hover:scale-105"
+                                                style={{
+                                                    backgroundColor: '#EA4335',
+                                                    borderRadius: '8px',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                title="Formatação para E-mail formal"
+                                            >
+                                                <img 
+                                                    src="/octa logo.png" 
+                                                    alt="E-mail" 
+                                                    style={{ width: '16px', height: '16px' }}
                                                 />
                                             </button>
                                         </div>

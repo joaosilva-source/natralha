@@ -1,5 +1,5 @@
 // AI Service - Integração híbrida com IA para respostas inteligentes
-// VERSION: v2.1.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.3.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../../config');
@@ -43,15 +43,16 @@ class AIService {
    * @param {string} userId - ID do usuário
    * @param {string} email - Email do usuário
    * @param {Object} searchResults - Resultados da busca híbrida (opcional)
+   * @param {string} formatType - Tipo de formatação (conversational, whatsapp, email)
    * @returns {Promise<Object>} Resposta com provider usado
    */
-  async generateResponse(question, context = "", sessionHistory = [], userId = null, email = null, searchResults = null) {
+  async generateResponse(question, context = "", sessionHistory = [], userId = null, email = null, searchResults = null, formatType = 'conversational') {
     try {
       // 1. TENTAR GEMINI PRIMEIRO (IA PRIMÁRIA)
       if (this.isGeminiConfigured()) {
         try {
           console.log(`🤖 AI Service: Tentando Gemini (primário) para usuário ${userId || 'anônimo'}`);
-          const response = await this._generateWithGemini(question, context, sessionHistory, userId, email, searchResults);
+          const response = await this._generateWithGemini(question, context, sessionHistory, userId, email, searchResults, formatType);
           return {
             response: response,
             provider: 'Gemini',
@@ -67,7 +68,7 @@ class AIService {
       if (this.isOpenAIConfigured()) {
         try {
           console.log(`🤖 AI Service: Usando OpenAI (fallback) para usuário ${userId || 'anônimo'}`);
-          const response = await this._generateWithOpenAI(question, context, sessionHistory, userId, email, searchResults);
+          const response = await this._generateWithOpenAI(question, context, sessionHistory, userId, email, searchResults, formatType);
           return {
             response: response,
             provider: 'OpenAI',
@@ -111,7 +112,6 @@ class AIService {
 - Tom: Profissional, direto, prestativo, conversacional, solidário.
 
 ## COMPORTAMENTO
-- Função de reformulação da resposta para meios mais detalhistas de comunicação, como e-mail por exemplo. 
 - Responda APENAS com a informação solicitada
 - Seja direto, sem preâmbulos ou confirmações
 - Use português brasileiro claro e objetivo
@@ -133,9 +133,98 @@ class AIService {
   }
 
   /**
+   * Obtém a persona para formatação WhatsApp
+   * @returns {string} Persona formatada para WhatsApp
+   */
+  getWhatsAppPersona() {
+    return `# VELOBOT - REFORMULADOR WHATSAPP
+
+## IDENTIDADE
+- Nome: VeloBot
+- Empresa: Velotax
+- Função: Reformulador de respostas para WhatsApp
+- Tom: Informal, amigável, direto, com emojis
+
+## COMPORTAMENTO
+- Reformule a resposta para o formato WhatsApp
+- Use linguagem informal e amigável
+- Seja conciso e direto
+- Use quebras de linha para facilitar leitura
+- Evite jargões técnicos complexos
+- Use abreviações comuns do WhatsApp quando apropriado
+
+## FORMATO WHATSAPP
+- Máximo 150 palavras
+- Quebras de linha frequentes
+- Emojis estratégicos
+- Linguagem coloquial
+- Foco na praticidade
+
+## ESTRUTURA
+- Saudação informal (se apropriado)
+- Informação principal
+- Detalhes importantes
+- Encerramento amigável`;
+  }
+
+  /**
+   * Obtém a persona para formatação E-mail formal
+   * @returns {string} Persona formatada para E-mail
+   */
+  getEmailPersona() {
+    return `# VELOBOT - REFORMULADOR E-MAIL FORMAL
+
+## IDENTIDADE
+- Nome: VeloBot
+- Empresa: Velotax
+- Função: Reformulador de respostas para E-mail formal
+- Tom: Profissional, formal, estruturado, cortês
+
+## COMPORTAMENTO
+- Reformule a resposta para o formato de e-mail formal
+- Use linguagem profissional e cortês
+- Estruture a informação de forma clara e organizada
+- Use títulos e subtítulos quando apropriado
+- Seja detalhado mas objetivo
+- Mantenha tom respeitoso e profissional
+
+## FORMATO E-MAIL FORMAL
+- Máximo 300 palavras
+- Estrutura clara com títulos
+- Linguagem formal e cortês
+- Detalhamento apropriado
+- Foco na completude da informação
+
+## ESTRUTURA
+- Saudação formal
+- Assunto/contexto
+- Informação principal estruturada
+- Detalhes relevantes
+- Encerramento cortês
+- Assinatura da empresa`;
+  }
+
+  /**
+   * Obtém a persona baseada no tipo de formatação
+   * @param {string} formatType - Tipo de formatação (conversational, whatsapp, email)
+   * @returns {string} Persona apropriada
+   */
+  _getPersonaByFormat(formatType) {
+    switch (formatType) {
+      case 'whatsapp':
+        return this.getWhatsAppPersona();
+      case 'email':
+        return this.getEmailPersona();
+      case 'conversational':
+      default:
+        return this.getPersona();
+    }
+  }
+
+  /**
    * Gera resposta usando Gemini (IA PRIMÁRIA)
    */
-  async _generateWithGemini(question, context, sessionHistory, userId, email, searchResults = null) {
+  async _generateWithGemini(question, context, sessionHistory, userId, email, searchResults = null, formatType = 'conversational') {
     const gemini = this._initializeGemini();
     if (!gemini) {
       throw new Error('Falha ao inicializar cliente Gemini');
@@ -144,7 +233,7 @@ class AIService {
     const model = gemini.getGenerativeModel({ model: this.geminiModel });
     
     // Construir prompt completo (system + user) otimizado para Gemini
-    const systemPrompt = this.getPersona();
+    const systemPrompt = this._getPersonaByFormat(formatType);
 
     const userPrompt = this.buildOptimizedPrompt(question, context, sessionHistory, searchResults);
     
@@ -164,7 +253,7 @@ class AIService {
   /**
    * Gera resposta usando OpenAI (IA FALLBACK)
    */
-  async _generateWithOpenAI(question, context, sessionHistory, userId, email, searchResults = null) {
+  async _generateWithOpenAI(question, context, sessionHistory, userId, email, searchResults = null, formatType = 'conversational') {
     const openai = this._initializeOpenAI();
     if (!openai) {
       throw new Error('Falha ao inicializar cliente OpenAI');
@@ -180,7 +269,7 @@ class AIService {
       messages: [
         {
           role: "system",
-          content: this.getPersona()
+          content: this._getPersonaByFormat(formatType)
         },
         {
           role: "user",

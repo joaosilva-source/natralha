@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.2.1 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.2.2 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -945,7 +945,7 @@ app.post('/api/chatbot/activity', async (req, res) => {
 // API do Botão IA - Resposta Conversacional
 app.post('/api/chatbot/ai-response', async (req, res) => {
   try {
-    const { question, botPerguntaResponse, articleContent, userId, sessionId } = req.body;
+    const { question, botPerguntaResponse, articleContent, userId, sessionId, formatType } = req.body;
 
     // Debug: Log dos dados recebidos
     console.log('🔍 AI Response Debug - Dados recebidos:', {
@@ -953,7 +953,8 @@ app.post('/api/chatbot/ai-response', async (req, res) => {
       botPerguntaResponse: botPerguntaResponse ? 'presente' : 'ausente',
       articleContent: articleContent ? 'presente' : 'ausente',
       userId: userId || 'não fornecido',
-      sessionId: sessionId || 'não fornecido'
+      sessionId: sessionId || 'não fornecido',
+      formatType: formatType || 'conversational'
     });
 
     if (!question || !botPerguntaResponse) {
@@ -995,7 +996,9 @@ app.post('/api/chatbot/ai-response', async (req, res) => {
       context,
       sessionHistory,
       cleanUserId,
-      cleanUserId
+      cleanUserId,
+      null, // searchResults
+      formatType || 'conversational'
     );
 
     if (!aiResult.success) {
