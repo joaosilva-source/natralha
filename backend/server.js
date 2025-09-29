@@ -772,6 +772,41 @@ app.post('/api/chatbot/clarification', async (req, res) => {
 });
 
 /**
+ * Limpar Cache das IAs - Força novo teste
+ * POST /api/chatbot/clear-cache
+ */
+app.post('/api/chatbot/clear-cache', async (req, res) => {
+  try {
+    console.log('🧹 Limpando cache das IAs...');
+    
+    // Limpar cache do aiService
+    aiService.statusCache = {
+      data: null,
+      timestamp: null,
+      ttl: 5 * 60 * 1000 // 5 minutos em ms
+    };
+    
+    // Forçar novo teste
+    const aiStatus = await aiService.testConnection();
+    
+    res.json({
+      success: true,
+      message: 'Cache limpo e IAs testadas',
+      aiStatus: aiStatus,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao limpar cache:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao limpar cache das IAs',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * Health Check das IAs - Determina IA primária
  * GET /api/chatbot/health-check
  */
