@@ -1,7 +1,7 @@
 # Dockerfile para Google Cloud Run - VeloHub V3
-# VERSION: v1.2.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
+# VERSION: v1.3.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
 # Multi-stage build para React + Node.js
-# Updated: 2025-01-30 - Fixed REACT_APP_ environment variables for build + Added debug logs
+# Updated: 2025-01-30 - Enhanced debug logs + Build verification
 
 # Stage 1: Build do frontend React
 FROM node:18-alpine AS frontend-builder
@@ -29,8 +29,18 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 RUN echo "=== VARIÁVEIS DE AMBIENTE REACT ===" && \
     echo "REACT_APP_GOOGLE_CLIENT_ID: $REACT_APP_GOOGLE_CLIENT_ID" && \
     echo "REACT_APP_AUTHORIZED_DOMAIN: $REACT_APP_AUTHORIZED_DOMAIN" && \
-    echo "REACT_APP_API_URL: $REACT_APP_API_URL"
+    echo "REACT_APP_API_URL: $REACT_APP_API_URL" && \
+    echo "Tamanho do CLIENT_ID: ${#REACT_APP_GOOGLE_CLIENT_ID}" && \
+    echo "CLIENT_ID é vazio? $([ -z "$REACT_APP_GOOGLE_CLIENT_ID" ] && echo 'SIM' || echo 'NÃO')"
 RUN npm run build
+
+# Verificar se as variáveis foram substituídas no build
+RUN echo "=== VERIFICANDO BUILD DO REACT ===" && \
+    find build/static/js -name "*.js" -exec grep -l "REACT_APP_GOOGLE_CLIENT_ID" {} \; && \
+    echo "Arquivos JS encontrados:" && \
+    ls -la build/static/js/ && \
+    echo "Verificando se CLIENT_ID foi substituído:" && \
+    grep -r "278491073220" build/static/js/ || echo "CLIENT_ID não encontrado no build"
 
 # Stage 2: Backend + Frontend build
 FROM node:18-alpine AS production
