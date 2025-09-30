@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.3.0 | DATE: 2025-09-29 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.3.1 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -49,6 +49,22 @@ const Chatbot = ({ prompt }) => {
         }
     };
 
+    // Função para executar handshake das IAs quando o chatbot é inicializado
+    const initializeVeloBot = async () => {
+        try {
+            console.log('🚀 VeloBot: Inicializando handshake das IAs...');
+            const handshakeResponse = await fetch(`${API_BASE_URL}/chatbot/health-check`);
+            if (handshakeResponse.ok) {
+                const handshakeData = await handshakeResponse.json();
+                console.log('✅ VeloBot: Handshake executado - IA primária:', handshakeData.primaryAI);
+            } else {
+                console.warn('⚠️ VeloBot: Handshake falhou - status:', handshakeResponse.status);
+            }
+        } catch (handshakeError) {
+            console.warn('⚠️ VeloBot: Handshake falhou (não crítico):', handshakeError.message);
+        }
+    };
+
     // Função para renderizar status do módulo
     const renderModuleStatus = (moduleKey, moduleName, title) => {
         const status = moduleStatus[moduleKey];
@@ -92,10 +108,13 @@ const Chatbot = ({ prompt }) => {
         );
     };
 
-    // Refresh automático do status
+    // Refresh automático do status e inicialização do VeloBot
     useEffect(() => {
         // Buscar status inicial
         fetchModuleStatus();
+        
+        // Inicializar VeloBot (handshake das IAs) apenas quando a aba é acessada
+        initializeVeloBot();
         
         // Configurar refresh automático
         const interval = setInterval(fetchModuleStatus, 3 * 60 * 1000); // 3 minutos (consistente com o sistema)

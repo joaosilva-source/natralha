@@ -514,16 +514,8 @@ const HomePage = ({ setCriticalNews }) => {
                 setLoading(true);
                 const velonewsResponse = await veloNewsAPI.getAll();
                 
-                // ✅ Handshake das IAs do VeloBot (refresh periódico)
-                try {
-                    const handshakeResponse = await fetch(`${API_BASE_URL}/chatbot/health-check`);
-                    if (handshakeResponse.ok) {
-                        const handshakeData = await handshakeResponse.json();
-                        console.log('🔄 VeloBot: Handshake periódico executado - IA primária:', handshakeData.primaryAI);
-                    }
-                } catch (handshakeError) {
-                    console.warn('⚠️ VeloBot: Handshake periódico falhou (não crítico):', handshakeError.message);
-                }
+                // ✅ Handshake das IAs do VeloBot movido para o componente Chatbot.js
+                // O handshake agora é executado apenas quando a aba VeloBot é acessada
                 
                 // ✅ Usar todos os velonews recebidos da API
                 const sortedVeloNews = [...velonewsResponse.data].sort((a, b) => {

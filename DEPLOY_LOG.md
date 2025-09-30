@@ -245,6 +245,16 @@
 
 ---
 
+### **GitHub Push - Correção .gitignore para Excluir Extensões VS Code**
+- **Data/Hora**: 2025-01-29 23:45:00
+- **Tipo**: GitHub Push
+- **Versão**: .gitignore v1.1.0
+- **Commit**: c99e52a
+- **Arquivos Modificados**: 
+  - `.gitignore` (v1.1.0 - exclusão de extensões VS Code)
+- **Descrição**: Correção do .gitignore para excluir extensões do VS Code que estavam sendo commitadas, causando commits lentos e repositório pesado. Adicionadas exclusões para .vscode/extensions/, .vscode/User/, .vscode/workspaceStorage/, mantendo apenas .vscode/extensions.json (lista de extensões recomendadas). Resolve problema de performance nos commits e evita configurações pessoais no repositório.
+- **Status**: ✅ Concluído com sucesso
+
 ### **GitHub Push - Correção Endpoint /api/module-status com Logs Detalhados**
 - **Data/Hora**: 2025-01-29 22:30:00
 - **Tipo**: GitHub Push

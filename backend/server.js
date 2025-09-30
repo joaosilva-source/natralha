@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.5.1 | DATE: 2025-09-30 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.5.4 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
  */
 
 const express = require('express');
@@ -1028,7 +1028,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
 
     // Log para Google Sheets (RESTAURADO)
     if (logsService.isConfigured()) {
-      await logsService.logAIUsage(userEmail, cleanQuestion, 'Pergunta Inicial');
+      await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Pergunta Inicial');
     }
 
     // Buscar dados do MongoDB
@@ -1039,23 +1039,34 @@ app.post('/api/chatbot/ask', async (req, res) => {
 
     // Buscar Bot_perguntas e artigos em paralelo
     // 1. TENTAR USAR CACHE PRIMEIRO
+    console.log('📦 Chat V2: Verificando cache do Bot_perguntas...');
     let botPerguntasData = dataCache.getBotPerguntasData();
     let articlesData = dataCache.getArticlesData();
+    
+    console.log('📦 Chat V2: Cache status - Bot_perguntas:', !!botPerguntasData, 'Artigos:', !!articlesData);
     
     // Se cache inválido, carregar do MongoDB
     if (!botPerguntasData || !articlesData) {
       console.log('⚠️ Chat V2: Cache inválido, carregando do MongoDB...');
+      console.log('📦 Chat V2: Carregando Bot_perguntas da collection...');
+      
       [botPerguntasData, articlesData] = await Promise.all([
         botPerguntasCollection.find({}).toArray(),
         articlesCollection.find({}).toArray()
       ]);
       
+      console.log(`📦 Chat V2: MongoDB - Bot_perguntas: ${botPerguntasData.length}, Artigos: ${articlesData.length}`);
+      
       // Atualizar cache
       dataCache.updateBotPerguntas(botPerguntasData);
       dataCache.updateArticles(articlesData);
+      
+      console.log('✅ Chat V2: Cache atualizado com dados do MongoDB');
+    } else {
+      console.log('✅ Chat V2: Usando dados do cache');
     }
 
-    console.log(`📋 Chat V2: ${botPerguntasData.length} perguntas do Bot_perguntas e ${articlesData.length} artigos carregados (via cache)`);
+    console.log(`📋 Chat V2: ${botPerguntasData.length} perguntas do Bot_perguntas e ${articlesData.length} artigos carregados`);
 
     // FILTRO MONGODB por keywords/sinônimos
     const filteredBotPerguntas = filterByKeywords(cleanQuestion, botPerguntasData);
@@ -1785,15 +1796,19 @@ const CACHE_VALIDITY_MS = 3 * 60 * 1000; // 3 minutos
  */
 const fetchModuleStatusFromMongoDB = async () => {
   try {
+    console.log('🔍 fetchModuleStatusFromMongoDB: Iniciando busca...');
+    
     if (!client) {
-      console.warn('⚠️ MongoDB não configurado - usando cache local');
+      console.warn('⚠️ MongoDB client não configurado - usando cache local');
       return moduleStatusCache;
     }
 
+    console.log('🔍 Conectando ao MongoDB...');
     await connectToMongo();
     const db = client.db('console_config');
     const collection = db.collection('module_status');
 
+    console.log('🔍 Buscando documento mais recente na collection module_status...');
     // Buscar o documento mais recente (maior createdAt)
     const latestStatus = await collection
       .findOne({}, { sort: { createdAt: -1 } });
@@ -1823,10 +1838,13 @@ const fetchModuleStatusFromMongoDB = async () => {
       _irpf: latestStatus._irpf
     });
     
+    console.log('✅ fetchModuleStatusFromMongoDB: Busca concluída com sucesso');
     return mappedStatus;
 
   } catch (error) {
     console.error('❌ Erro ao buscar status dos módulos do MongoDB:', error);
+    console.error('❌ Stack trace:', error.stack);
+    console.log('🔄 Usando cache local como fallback');
     return moduleStatusCache; // Fallback para cache local
   }
 };
@@ -1862,8 +1880,14 @@ const getModuleStatus = async () => {
 // Endpoint para buscar status dos módulos (GET)
 app.get('/api/module-status', async (req, res) => {
   try {
-    console.log('📊 Status dos módulos solicitado');
+    console.log('📊 Status dos módulos solicitado - Iniciando...');
+    console.log('📊 Headers da requisição:', req.headers);
+    
+    // Garantir que sempre retornamos JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     const currentStatus = await getModuleStatus();
+    console.log('📊 Status obtido do MongoDB/cache:', currentStatus);
     
     // Garantir que sempre retornamos dados válidos
     const validStatus = {
@@ -1875,9 +1899,15 @@ app.get('/api/module-status', async (req, res) => {
     };
     
     console.log('📊 Retornando status dos módulos:', validStatus);
+    console.log('📊 Status dos módulos enviado com sucesso');
+    
     res.json(validStatus);
   } catch (error) {
     console.error('❌ Erro ao buscar status dos módulos:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Garantir que sempre retornamos JSON mesmo em caso de erro
+    res.setHeader('Content-Type', 'application/json');
     
     // Fallback com dados padrão em caso de erro
     const fallbackStatus = {
@@ -1889,6 +1919,8 @@ app.get('/api/module-status', async (req, res) => {
     };
     
     console.log('🔄 Usando status fallback:', fallbackStatus);
+    console.log('🔄 Status fallback enviado com sucesso');
+    
     res.json(fallbackStatus);
   }
 });

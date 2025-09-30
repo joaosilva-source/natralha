@@ -71,7 +71,17 @@ updatedAt
   _userMail: String,              // Email do usuário
   _userId: String,                // ID do usuário
   _userRole: String,              // Papel do usuário
-  _userClearance: Object,         // Permissões do usuário
+  _userClearance: {               // Permissões do usuário
+    artigos: Boolean,
+    velonews: Boolean,
+    botPerguntas: Boolean,
+    chamadosInternos: Boolean,
+    igp: Boolean,
+    qualidade: Boolean,
+    capacity: Boolean,
+    config: Boolean,
+    servicos: Boolean
+  },
   _userTickets: Object            // Tipos de tickets
 }
 

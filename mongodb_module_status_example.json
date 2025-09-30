@@ -1,0 +1,12 @@
+{
+  "_id": "ObjectId('507f1f77bcf86cd799439011')",
+  "_trabalhador": "on",
+  "_pessoal": "on", 
+  "_pgtoAntecip": "on",
+  "_antecipacao": "off",
+  "_irpf": "off",
+  "createdAt": "2025-01-27T00:00:00.000Z",
+  "updatedAt": "2025-01-27T00:00:00.000Z",
+  "version": "v1.0.0",
+  "description": "Configuração padrão dos módulos VeloHub - Crédito Trabalhador, Pessoal e Pagamento Antecipado ON | Antecipação e IRPF OFF"
+}
