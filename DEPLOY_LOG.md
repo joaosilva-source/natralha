@@ -245,4 +245,15 @@
 
 ---
 
+### **GitHub Push - Correção Endpoint /api/module-status com Logs Detalhados**
+- **Data/Hora**: 2025-01-29 22:30:00
+- **Tipo**: GitHub Push
+- **Versão**: backend/server.js v2.10.0
+- **Commit**: ef54752
+- **Arquivos Modificados**: 
+  - `backend/server.js` (v2.10.0 - logs detalhados, validação de dados, fallback robusto)
+- **Descrição**: Correção do endpoint /api/module-status que estava causando erro 'Unexpected token <' no Chatbot. Adicionados logs detalhados para debug do MongoDB e cache, garantia de que endpoint sempre retorna JSON válido, fallback robusto em caso de erro, melhorias nos logs de conexão MongoDB e validação de dados antes de retornar resposta. Resolve problema de status dos módulos não sendo capturado da collection.
+- **Status**: ✅ Concluído com sucesso
+
+---
 *Log atualizado automaticamente após push para GitHub*
