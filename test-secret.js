@@ -30,6 +30,13 @@ async function accessSecret() {
     console.log('CONCLUSÃO: O problema NÃO está na infraestrutura do Google Cloud.');
     console.log('O problema está na aplicação VeloHub (código, bibliotecas, configuração).');
 
+    testResults.secretAccess = {
+      success: true,
+      payloadLength: payload.length,
+      preview: payload.substring(0, 50),
+      conclusion: 'Infraestrutura OK - Problema na aplicação'
+    };
+
   } catch (error) {
     console.error('❌ ERRO AO ACESSAR O SECRET:', error.message);
     console.error('Código do erro:', error.code);
@@ -37,6 +44,14 @@ async function accessSecret() {
     console.log('==========================================');
     console.log('CONCLUSÃO: O problema ESTÁ na infraestrutura do Google Cloud.');
     console.log('Verificar: permissões, rede, nome do secret, projeto, etc.');
+
+    testResults.secretAccess = {
+      success: false,
+      error: error.message,
+      code: error.code,
+      details: error.details,
+      conclusion: 'Problema na infraestrutura Google Cloud'
+    };
   }
 }
 
@@ -49,28 +64,82 @@ async function listSecrets() {
     });
     
     console.log(`Secrets encontrados no projeto ${projectId}:`);
+    const secretNames = [];
     secrets.forEach(secret => {
       const secretName = secret.name.split('/').pop();
       console.log(`- ${secretName}`);
+      secretNames.push(secretName);
     });
     
     if (secrets.length === 0) {
       console.log('Nenhum secret encontrado no projeto.');
     }
+
+    testResults.secretsList = {
+      success: true,
+      count: secrets.length,
+      secrets: secretNames
+    };
   } catch (error) {
     console.error('Erro ao listar secrets:', error.message);
+    testResults.secretsList = {
+      success: false,
+      error: error.message
+    };
   }
   console.log(`=====================================`);
 }
 
+// Criar servidor HTTP para Cloud Run
+import { createServer } from 'http';
+
+const port = process.env.PORT || 8080;
+let testResults = {
+  status: 'running',
+  secretAccess: null,
+  secretsList: null,
+  error: null
+};
+
 // Executar testes
 console.log('Iniciando teste de isolamento...\n');
-accessSecret().then(() => {
-  return listSecrets();
-}).then(() => {
-  console.log('\nTeste de isolamento concluído.');
-  process.exit(0);
-}).catch((error) => {
-  console.error('Erro geral no teste:', error);
-  process.exit(1);
+
+async function runTests() {
+  try {
+    await accessSecret();
+    await listSecrets();
+    testResults.status = 'completed';
+    console.log('\nTeste de isolamento concluído.');
+  } catch (error) {
+    testResults.status = 'error';
+    testResults.error = error.message;
+    console.error('Erro geral no teste:', error);
+  }
+}
+
+// Executar testes imediatamente
+runTests();
+
+// Criar servidor HTTP
+const server = createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  if (req.url === '/health') {
+    res.statusCode = 200;
+    res.end(JSON.stringify({ status: 'healthy', timestamp: new Date().toISOString() }));
+  } else {
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      message: 'Teste de Isolamento Secret Manager',
+      status: testResults.status,
+      results: testResults,
+      timestamp: new Date().toISOString()
+    }, null, 2));
+  }
+});
+
+server.listen(port, () => {
+  console.log(`Servidor de teste rodando na porta ${port}`);
+  console.log(`Acesse: http://localhost:${port} para ver os resultados`);
 });
