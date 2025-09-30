@@ -7,10 +7,10 @@ module.exports = {
   // ===========================================
   
   // OpenAI API Key (para fallback)
-  OPENAI_API_KEY: process.env.GPT_API,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   
   // Google Gemini API Key (IA primária)
-  GEMINI_API_KEY: process.env.GEMINI_API,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   
   // ===========================================
   // BANCO DE DADOS
