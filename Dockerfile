@@ -33,6 +33,9 @@ COPY backend/ ./
 # Copiar build do frontend
 COPY --from=frontend-builder /app/build ./public
 
+# Verificar estrutura de diretórios
+RUN echo "=== ESTRUTURA DE DIRETÓRIOS ===" && ls -la && echo "=== CONTEÚDO DO PUBLIC ===" && ls -la public/
+
 # Expor porta (Cloud Run usa PORT dinâmica)
 EXPOSE 8080
 
