@@ -1,7 +1,18 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.5.4 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.5.5 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
  */
+
+// LOG DE DIAGNÓSTICO #1: Identificar a versão do código
+console.log("🚀 INICIANDO APLICAÇÃO - VERSÃO DO CÓDIGO: 1.5.5 - DIAGNÓSTICO ATIVO");
+
+// LOG DE DIAGNÓSTICO #2: Verificar as variáveis de ambiente
+console.log("🔍 Verificando variáveis de ambiente...");
+console.log(`- NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`- OPENAI_API_KEY existe: ${!!process.env.OPENAI_API_KEY}`);
+console.log(`- GEMINI_API_KEY existe: ${!!process.env.GEMINI_API_KEY}`);
+console.log(`- MONGODB_URI existe: ${!!process.env.MONGODB_URI}`);
+console.log(`- PORT: ${process.env.PORT}`);
 
 const express = require('express');
 const cors = require('cors');
@@ -67,6 +78,18 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Middleware para garantir que erros sempre retornem JSON
+app.use((err, req, res, next) => {
+  console.error('❌ Erro no servidor:', err);
+  if (!res.headersSent) {
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor',
+      message: err.message 
+    });
+  }
+});
 
 // Middleware de debug para capturar problemas de JSON
 app.use((req, res, next) => {
