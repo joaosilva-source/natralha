@@ -39,5 +39,10 @@ export function isAuthorizedDomain(email) {
 
 // Função para obter o Client ID
 export function getClientId() {
+  console.log('=== DEBUG GOOGLE CONFIG ===');
+  console.log('GOOGLE_CONFIG.CLIENT_ID:', GOOGLE_CONFIG.CLIENT_ID);
+  console.log('process.env.REACT_APP_GOOGLE_CLIENT_ID:', process.env.REACT_APP_GOOGLE_CLIENT_ID);
+  console.log('Tipo do CLIENT_ID:', typeof GOOGLE_CONFIG.CLIENT_ID);
+  console.log('========================');
   return GOOGLE_CONFIG.CLIENT_ID;
 }

@@ -43,13 +43,28 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     script.onload = () => {
       if (window.google) {
+        const clientId = getClientId();
+        console.log('=== DEBUG GOOGLE OAUTH ===');
+        console.log('Client ID recebido:', clientId);
+        console.log('Tipo do Client ID:', typeof clientId);
+        console.log('Client ID é undefined?', clientId === undefined);
+        console.log('Client ID é null?', clientId === null);
+        console.log('Client ID é string vazia?', clientId === '');
+        console.log('process.env.REACT_APP_GOOGLE_CLIENT_ID:', process.env.REACT_APP_GOOGLE_CLIENT_ID);
+        console.log('========================');
+        
+        if (!clientId) {
+          console.error('ERRO: Client ID não está definido!');
+          return;
+        }
+        
         window.google.accounts.id.initialize({
-          client_id: getClientId(),
+          client_id: clientId,
           callback: handleCredentialResponse,
           auto_select: false,
           cancel_on_tap_outside: true
         });
-        console.log('Google Sign-In inicializado com Client ID:', getClientId());
+        console.log('Google Sign-In inicializado com Client ID:', clientId);
         
         // Renderizar o botão do Google automaticamente
         setTimeout(() => {
