@@ -7,7 +7,7 @@ import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 const client = new SecretManagerServiceClient();
 
 // Configurações do projeto VeloHub
-const projectId = 'velohub-278491073220';
+const projectId = '278491073220';
 const secretName = 'MONGO_ENV'; // Nome do secret do MongoDB
 
 async function accessSecret() {
