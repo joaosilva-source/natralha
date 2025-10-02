@@ -1,4 +1,5 @@
 // Search Service - Busca inteligente em Bot_perguntas e Artigos
+// VERSION: v2.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
 // VERSION: v2.3.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const cosineSimilarity = require('cosine-similarity');
 
@@ -36,7 +37,7 @@ class SearchService {
         
         // Log detalhado para as primeiras 3 perguntas ou scores > 0.05
         if (i < 3 || score > 0.05) {
-          console.log(`🔍 Search: Pergunta ${i+1}: "${pergunta.Pergunta || 'Sem título'}" - Score: ${score.toFixed(3)}`);
+          console.log(`🔍 Search: Pergunta ${i+1}: "${pergunta.pergunta || 'Sem título'}" - Score: ${score.toFixed(3)}`);
         }
         
         if (score > bestScore) {
@@ -51,9 +52,9 @@ class SearchService {
       // Threshold mínimo de relevância (reduzido significativamente para melhor detecção)
       if (bestScore > 0.05) {
         console.log(`✅ Search: Pergunta encontrada em Bot_perguntas com score ${bestScore.toFixed(3)}`);
-        console.log(`📋 Search: Match encontrado: "${bestMatch.Pergunta}"`);
-        console.log(`🔍 Search: Palavras-chave: "${bestMatch["Palavras-chave"]}"`);
-        console.log(`🔍 Search: Sinônimos: "${bestMatch.Sinonimos}"`);
+        console.log(`📋 Search: Match encontrado: "${bestMatch.pergunta}"`);
+        console.log(`🔍 Search: Palavras-chave: "${bestMatch.palavrasChave}"`);
+        console.log(`🔍 Search: Sinônimos: "${bestMatch.sinonimos}"`);
         return bestMatch;
       }
 
@@ -169,35 +170,50 @@ class SearchService {
     console.log(`🔍 Search: DEBUG - Item completo:`, JSON.stringify(item, null, 2));
     
     // Para Bot_perguntas (estrutura MongoDB correta)
-    if (item.Pergunta) {
-      texts.push(item.Pergunta);
-      console.log(`🔍 Search: Pergunta: "${item.Pergunta}"`);
+    if (item.pergunta) {
+      texts.push(item.pergunta);
+      console.log(`🔍 Search: Pergunta: "${item.pergunta}"`);
     } else {
-      console.log(`⚠️ Search: Campo 'Pergunta' não encontrado no item`);
+      console.log(`⚠️ Search: Campo 'pergunta' não encontrado no item`);
     }
     
-    if (item["Palavras-chave"]) {
-      texts.push(item["Palavras-chave"]);
-      console.log(`🔍 Search: Palavras-chave: "${item["Palavras-chave"]}"`);
+    if (item.palavrasChave) {
+      texts.push(item.palavrasChave);
+      console.log(`🔍 Search: Palavras-chave: "${item.palavrasChave}"`);
     } else {
-      console.log(`⚠️ Search: Campo 'Palavras-chave' não encontrado no item`);
+      console.log(`⚠️ Search: Campo 'palavrasChave' não encontrado no item`);
     }
     
-    if (item.Sinonimos) {
-      texts.push(item.Sinonimos);
-      console.log(`🔍 Search: Sinônimos: "${item.Sinonimos}"`);
+    if (item.sinonimos) {
+      texts.push(item.sinonimos);
+      console.log(`🔍 Search: Sinônimos: "${item.sinonimos}"`);
     } else {
-      console.log(`⚠️ Search: Campo 'Sinonimos' não encontrado no item`);
+      console.log(`⚠️ Search: Campo 'sinonimos' não encontrado no item`);
     }
     
-    // Para Artigos (estrutura diferente)
-    if (item.title) {
-      texts.push(item.title);
-      console.log(`🔍 Search: Título do artigo: "${item.title}"`);
+    // Para Artigos (estrutura MongoDB correta)
+    if (item.artigo_titulo) {
+      texts.push(item.artigo_titulo);
+      console.log(`🔍 Search: Título do artigo: "${item.artigo_titulo}"`);
+    } else {
+      console.log(`⚠️ Search: Campo 'artigo_titulo' não encontrado no item`);
     }
-    if (item.content) {
-      texts.push(item.content.substring(0, 500)); // Primeiros 500 chars
-      console.log(`🔍 Search: Conteúdo do artigo: "${item.content.substring(0, 100)}..."`);
+    
+    if (item.artigo_conteudo) {
+      texts.push(item.artigo_conteudo.substring(0, 500)); // Primeiros 500 chars
+      console.log(`🔍 Search: Conteúdo do artigo: "${item.artigo_conteudo.substring(0, 100)}..."`);
+    } else {
+      console.log(`⚠️ Search: Campo 'artigo_conteudo' não encontrado no item`);
+    }
+    
+    if (item.categoria_titulo) {
+      texts.push(item.categoria_titulo);
+      console.log(`🔍 Search: Categoria do artigo: "${item.categoria_titulo}"`);
+    }
+    
+    if (item.tag) {
+      texts.push(item.tag);
+      console.log(`🔍 Search: Tag do artigo: "${item.tag}"`);
     }
     
     const result = texts.join(' ').trim();
@@ -251,8 +267,8 @@ class SearchService {
     let boost = 0;
     
     // Buscar apenas no campo correto do MongoDB
-    if (item["Palavras-chave"]) {
-      const keywordsText = item["Palavras-chave"].toLowerCase();
+    if (item.palavrasChave) {
+      const keywordsText = item.palavrasChave.toLowerCase();
       const questionWordsArray = questionWords.toLowerCase().split(' ');
       
       questionWordsArray.forEach(word => {
@@ -276,8 +292,8 @@ class SearchService {
     const questionLower = questionWords.toLowerCase();
     
     // Fuzzy match em Palavras-chave
-    if (item["Palavras-chave"]) {
-      const keywords = item["Palavras-chave"].toLowerCase();
+    if (item.palavrasChave) {
+      const keywords = item.palavrasChave.toLowerCase();
       const questionWordsArray = questionLower.split(' ');
       
       questionWordsArray.forEach(word => {
@@ -319,10 +335,10 @@ class SearchService {
    * @returns {number} Exact match score
    */
   calculateExactMatch(questionWords, item) {
-    if (!item.Pergunta) return 0;
+    if (!item.pergunta) return 0;
     
     const questionLower = questionWords.toLowerCase();
-    const perguntaLower = item.Pergunta.toLowerCase();
+    const perguntaLower = item.pergunta.toLowerCase();
     
     // Match exato completo
     if (perguntaLower.includes(questionLower) || questionLower.includes(perguntaLower)) {
@@ -389,10 +405,10 @@ class SearchService {
       const documento = botPerguntasData[i];
       
       // Extrair campos do documento MongoDB
-      const pergunta = documento.Pergunta || '';
-      const resposta = documento.Resposta || '';
-      const palavrasChave = documento["Palavras-chave"] || '';
-      const sinonimos = documento.Sinonimos || '';
+      const pergunta = documento.pergunta || '';
+      const resposta = documento.resposta || '';
+      const palavrasChave = documento.palavrasChave || '';
+      const sinonimos = documento.sinonimos || '';
       
       // Combinar palavras-chave e sinônimos para busca
       const textoBusca = `${palavrasChave} ${sinonimos}`.toLowerCase();

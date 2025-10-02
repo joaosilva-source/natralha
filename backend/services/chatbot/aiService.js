@@ -1,4 +1,5 @@
 // AI Service - Integração híbrida com IA para respostas inteligentes
+// VERSION: v2.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
 // VERSION: v2.6.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
 const { OpenAI } = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -278,9 +279,9 @@ class AIService {
     
     // 3. PALAVRAS-CHAVE E SINÔNIMOS RELEVANTES (apenas os relevantes)
     const relevantKeywords = filteredData.map((item, index) => {
-      return `${index + 1}. ${item.Pergunta}
-   Palavras-chave: ${item["Palavras-chave"]}
-   Sinônimos: ${item.Sinonimos}`;
+      return `${index + 1}. ${item.pergunta}
+   Palavras-chave: ${item.palavrasChave}
+   Sinônimos: ${item.sinonimos}`;
     }).join('\n\n');
     
     // 4. CONTEXTO DA SESSÃO (se houver)
@@ -459,8 +460,8 @@ Retorne APENAS os números das opções com match direto, separados por vírgula
     // Informação principal (Bot_perguntas)
     if (searchResults && searchResults.botPergunta) {
       context += `### INFORMAÇÃO PRINCIPAL
-**Pergunta:** ${searchResults.botPergunta.Pergunta || searchResults.botPergunta.pergunta}
-**Resposta:** ${searchResults.botPergunta.Resposta || searchResults.botPergunta.resposta}
+**Pergunta:** ${searchResults.botPergunta.pergunta}
+**Resposta:** ${searchResults.botPergunta.resposta}
 **Relevância:** ${searchResults.botPergunta.relevanceScore || 'N/A'}/10
 **Fonte:** Bot_perguntas (MongoDB)
 

@@ -1,6 +1,43 @@
 # 📋 DEPLOY LOG - VeloHub V3
 <!-- VERSION: v1.0.0 | DATE: 2025-09-18 | AUTHOR: VeloHub Development Team -->
 
+## 🔐 Configuração de Ambiente GCP
+
+### 📋 Secret Manager - Secrets Configurados
+| Nome do Secret | Local | Criptografia | Criado em | Expiração |
+|---|---|---|---|---|
+| `GEMINI_API_KEY` | Replicado automaticamente | Gerenciado pelo Google | 30/09/2025 18:12 | Nunca |
+| `GOOGLE_CREDENTIALS` | Replicado automaticamente | Gerenciado pelo Google | 24/09/2025 12:16 | Nunca |
+| `google-client-id` | Replicado automaticamente | Gerenciado pelo Google | 10/09/2025 17:11 | Nunca |
+| `google-client-secret` | Replicado automaticamente | Gerenciado pelo Google | 10/09/2025 17:18 | Nunca |
+| `MONGO_ENV` | Replicado automaticamente | Gerenciado pelo Google | 30/09/2025 18:15 | Nunca |
+| `OPENAI_API_KEY` | Replicado automaticamente | Gerenciado pelo Google | 30/09/2025 18:14 | Nunca |
+
+### 🌐 Variáveis de Ambiente do Container
+| Variável | Valor | Tipo |
+|---|---|---|
+| `REACT_APP_GOOGLE_CLIENT_ID` | `278491073220-eb4ogvn3aifu0ut9mq3rvu5r9r9l3137.apps.googleusercontent.com` | Variável de Ambiente |
+| `REACT_APP_AUTHORIZED_DOMAIN` | `@velotax.com.br` | Variável de Ambiente |
+| `CHATBOT_LOG_SHEET_NAME` | `Log_IA_Usage` | Variável de Ambiente |
+
+### 🔑 Secrets Expostos como Variáveis de Ambiente
+| Variável de Ambiente | Secret Manager | Versão |
+|---|---|---|
+| `OPENAI_API_KEY` | `OPENAI_API_KEY` | Versão 1 |
+| `GEMINI_API_KEY` | `GEMINI_API_KEY` | Versão 1 |
+| `MONGODB_ENV` | `MONGO_ENV` | Versão 1 |
+| `GOOGLE_CLIENT_SECRET` | `google-client-secret` | Versão 1 |
+| `GOOGLE_CREDENTIALS` | `GOOGLE_CREDENTIALS` | Versão 1 |
+| `GOOGLE_CLIENT_ID` | `google-client-id` | Versão 1 |
+
+### 🚀 Deploy Automático
+- **Gatilho**: Push no GitHub
+- **Plataforma**: Google Cloud Build
+- **Destino**: Google Cloud Run
+- **Configuração**: `cloudbuild.yaml`
+
+---
+
 ## 🚀 **DEPLOYS E PUSHES REALIZADOS**
 
 ### **GitHub Push - Implementação Completa do Novo Sistema de Busca VeloBot**
@@ -369,6 +406,59 @@
   - `src/config/google-config.js` (v1.2.0 - fallback hardcoded para CLIENT_ID)
 - **Descrição**: Solução temporária implementada com sucesso - adicionado fallback hardcoded para REACT_APP_GOOGLE_CLIENT_ID, resolve problema de variáveis não sendo substituídas no build, Google OAuth funcionando perfeitamente, login realizado com sucesso, próximo problema: MongoDB não configurado no backend
 - **Status**: ✅ Concluído com sucesso - Google OAuth RESOLVIDO
+
+---
+
+### **GitHub Push - Remoção do Teste de Isolamento e Restauração da Aplicação VeloHub**
+- **Data/Hora**: 2025-01-30 22:45:00
+- **Tipo**: GitHub Push
+- **Versão**: v3.0.0
+- **Commit**: ff4f389
+- **Arquivos Modificados**:
+  - `Dockerfile` (v1.3.0 - logs de debug Google OAuth)
+  - `package.json` (v3.0.0 - metadados completos)
+  - `DEPLOY_LOG.md` (atualização do log)
+  - `README.md` (documentação atualizada)
+- **Arquivos Removidos**:
+  - `test-secret.js` (teste de isolamento)
+  - `cloudbuild-test.yaml` (configuração de teste)
+- **Arquivos Adicionados**:
+  - `diagnostico_cloud_run.md` (diagnóstico do Cloud Run)
+  - `prompt_avaliacao_ias.md` (prompt de avaliação de IAs)
+- **Descrição**: Remoção completa do teste de isolamento que estava causando problemas no app.velohub.velotax.com.br, restauração dos arquivos originais (Dockerfile e package.json), limpeza de arquivos de teste, atualização para versão 3.0.0 com metadados completos, preparação para novo deploy no Cloud Run
+- **Status**: ✅ Concluído com sucesso
+
+---
+
+### **GitHub Push - Correção Domínio Autorizado para Login**
+- **Data/Hora**: 2024-12-19 17:45:00
+- **Tipo**: GitHub Push
+- **Versão**: app.yaml v1.2.1
+- **Commit**: 742df5d
+- **Arquivos Modificados**: 
+  - `app.yaml` (correção REACT_APP_AUTHORIZED_DOMAIN)
+- **Descrição**: Correção crítica do domínio autorizado para login - removido "@" do domínio "velotax.com.br" para permitir login com emails do domínio. Problema: variável do container no GCP não foi sobrescrita automaticamente, usuário corrigiu manualmente no console.
+- **Status**: ✅ Concluído com sucesso
+
+### **GitHub Push - Correção Crítica Fallback AUTHORIZED_DOMAIN**
+- **Data/Hora**: 2024-12-19 18:00:00
+- **Tipo**: GitHub Push
+- **Versão**: google-config.js v1.2.1
+- **Commit**: bd7aa40
+- **Arquivos Modificados**: 
+  - `src/config/google-config.js` (fallback para AUTHORIZED_DOMAIN)
+- **Descrição**: Correção crítica - adicionado fallback "velotax.com.br" para AUTHORIZED_DOMAIN quando process.env.REACT_APP_AUTHORIZED_DOMAIN for undefined. Resolve problema de login não funcionar mesmo com variável configurada.
+- **Status**: ✅ Concluído com sucesso - LOGIN FUNCIONANDO!
+
+### **GitHub Push - Correção Crítica MongoDB Config**
+- **Data/Hora**: 2024-12-19 18:15:00
+- **Tipo**: GitHub Push
+- **Versão**: app.yaml v1.2.2
+- **Commit**: ef565ed
+- **Arquivos Modificados**: 
+  - `app.yaml` (correção MONGO_ENV para usar MONGODB_ENV)
+- **Descrição**: Correção crítica da configuração MongoDB - alterado MONGO_ENV: ${MONGO_ENV} para MONGO_ENV: ${MONGODB_ENV} para usar o nome correto do secret no Secret Manager. Resolve problema de MongoDB não configurado e APIs de dados não funcionarem.
+- **Status**: ✅ Deploy em andamento
 
 ---
 

@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - API Configuration
- * VERSION: v1.0.1 | DATE: 2025-01-27 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.0.2 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 /**
@@ -47,6 +47,16 @@ if (process.env.NODE_ENV === 'development') {
   console.log('🔧 API Config:', {
     baseUrl: API_BASE_URL,
     environment: process.env.NODE_ENV,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side'
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side',
+    reactAppApiUrl: process.env.REACT_APP_API_URL,
+    nodeEnv: process.env.NODE_ENV
   });
 }
+
+// Log sempre (para debug do problema)
+console.log('🔧 API Config (SEMPRE):', {
+  baseUrl: API_BASE_URL,
+  environment: process.env.NODE_ENV,
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side',
+  reactAppApiUrl: process.env.REACT_APP_API_URL
+});

@@ -2,6 +2,7 @@ import React from 'react';
 import { X, BookOpen, Calendar, User } from 'lucide-react';
 
 // Componente Modal de Artigo
+// VERSION: v1.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
 const ArticleModal = ({ isOpen, onClose, article }) => {
     if (!isOpen || !article) return null;
 
@@ -63,24 +64,16 @@ const ArticleModal = ({ isOpen, onClose, article }) => {
                 {/* Conteúdo do Modal */}
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                     {/* Keywords se disponível */}
-                    {article.keywords && (
+                    {article.tag && (
                         <div className="mb-6">
-                            <h3 className="text-sm font-semibold mb-2" style={{color: 'var(--blue-dark)'}}>Palavras-chave:</h3>
+                            <h3 className="text-sm font-semibold mb-2" style={{color: 'var(--blue-dark)'}}>Tag:</h3>
                             <div className="flex flex-wrap gap-2">
-                                {Array.isArray(article.keywords) ? 
-                                    article.keywords.map((keyword, index) => (
-                                        <span 
-                                            key={index}
-                                            className="px-3 py-1 text-sm rounded-full"
-                                            style={{backgroundColor: 'var(--cor-borda)', color: 'var(--blue-medium)'}}
-                                        >
-                                            {keyword}
-                                        </span>
-                                    )) :
-                                    <span className="px-3 py-1 text-sm rounded-full" style={{backgroundColor: 'var(--cor-borda)', color: 'var(--blue-medium)'}}>
-                                        {article.keywords}
-                                    </span>
-                                }
+                                <span 
+                                    className="px-3 py-1 text-sm rounded-full"
+                                    style={{backgroundColor: 'var(--cor-borda)', color: 'var(--blue-medium)'}}
+                                >
+                                    {article.tag}
+                                </span>
                             </div>
                         </div>
                     )}

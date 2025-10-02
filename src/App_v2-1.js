@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
- * VERSION: v1.3.5 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+ * VERSION: v1.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -144,6 +144,12 @@ const Header = ({ activePage, setActivePage, isDarkMode, toggleDarkMode }) => {
   const handleNavClick = (item) => {
     console.log('Clicou em:', item); // Debug
     
+    // Desativar aba Apoio temporariamente
+    if (item === 'Apoio') {
+      console.log('Aba Apoio desativada temporariamente'); // Debug
+      return; // Não permite navegar para Apoio
+    }
+    
     if (item === 'VeloAcademy') {
       console.log('Redirecionando para VeloAcademy...'); // Debug
       window.open('https://veloacademy.vercel.app', '_blank');
@@ -166,7 +172,13 @@ const Header = ({ activePage, setActivePage, isDarkMode, toggleDarkMode }) => {
             <button
               key={item}
               onClick={() => handleNavClick(item)}
-              className={`nav-link ${activePage === item ? 'active' : ''}`}
+              className={`nav-link ${activePage === item ? 'active' : ''} ${item === 'Apoio' ? 'disabled' : ''}`}
+              disabled={item === 'Apoio'}
+              style={item === 'Apoio' ? { 
+                opacity: 0.5, 
+                cursor: 'not-allowed',
+                pointerEvents: 'none'
+              } : {}}
             >
               {item}
             </button>
@@ -303,6 +315,14 @@ export default function App_v2() {
     }
   }, [isDarkMode]);
 
+  // Redirecionar automaticamente se estiver na página Apoio (desativada)
+  useEffect(() => {
+    if (activePage === 'Apoio') {
+      console.log('Redirecionando de Apoio para Home (aba desativada)');
+      setActivePage('Home');
+    }
+  }, [activePage, setActivePage]);
+
   // Inicializar funcionalidades do header
   useEffect(() => {
     // Importar e inicializar o header dinamicamente
@@ -335,7 +355,8 @@ export default function App_v2() {
       case 'Artigos':
         return <ArtigosPage />;
       case 'Apoio':
-        return <ApoioPage />;
+        // Redirecionar para Home se tentar acessar Apoio (desativado)
+        return <HomePage setCriticalNews={setCriticalNews} />;
       case 'VeloAcademy':
         return <div className="text-center p-10 text-gray-800 dark:text-gray-200"><h1 className="text-3xl">VeloAcademy</h1><p>Clique no botão VeloAcademy no header para acessar a plataforma.</p></div>;
       default:
@@ -1232,15 +1253,13 @@ const ArtigosPage = () => {
             const contentText = article.content ? article.content.replace(/<[^>]*>/g, '').toLowerCase() : '';
             const contentMatch = contentText.includes(searchTerm);
             
-            // Buscar nas palavras-chave
-            const keywordsMatch = article.keywords && article.keywords.some(keyword => 
-                keyword.toLowerCase().includes(searchTerm)
-            );
+            // Buscar na tag (campo do schema)
+            const tagMatch = article.tag && article.tag.toLowerCase().includes(searchTerm);
             
             // Buscar na categoria
             const categoryMatch = article.category && article.category.toLowerCase().includes(searchTerm);
             
-            return titleMatch || contentMatch || keywordsMatch || categoryMatch;
+            return titleMatch || contentMatch || tagMatch || categoryMatch;
         });
     };
 
@@ -1494,18 +1513,11 @@ const ArtigosPage = () => {
                                                      dangerouslySetInnerHTML={renderHTML(article.content)}
                                                  />
                                             )}
-                                            {article.keywords && article.keywords.length > 0 && (
+                                            {article.tag && (
                                                 <div className="flex flex-wrap gap-2">
-                                                    {article.keywords.slice(0, 5).map((keyword, index) => (
-                                                        <span key={index} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
-                                                            {keyword}
-                                                        </span>
-                                                    ))}
-                                                    {article.keywords.length > 5 && (
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
-                                                            +{article.keywords.length - 5} mais
-                                                        </span>
-                                                    )}
+                                                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
+                                                        {article.tag}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -1556,15 +1568,13 @@ const ArtigosPage = () => {
                                 dangerouslySetInnerHTML={renderHTML(selectedArticle.content)}
                             />
                             
-                            {selectedArticle.keywords && selectedArticle.keywords.length > 0 && (
+                            {selectedArticle.tag && (
                                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Palavras-chave:</h4>
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Tag:</h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {selectedArticle.keywords.map((keyword, index) => (
-                                            <span key={index} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm">
-                                                {keyword}
-                                            </span>
-                                        ))}
+                                        <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm">
+                                            {selectedArticle.tag}
+                                        </span>
                                     </div>
                                 </div>
                             )}

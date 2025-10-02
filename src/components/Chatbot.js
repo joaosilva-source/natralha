@@ -1,12 +1,15 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.3.2 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.3.5 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, BookOpen, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { getUserSession } from '../services/auth';
 import { API_BASE_URL } from '../config/api-config';
+
+// Log da configuração da API para debug
+console.log('🔧 Chatbot - API_BASE_URL:', API_BASE_URL);
 import ArticleModal from './ArticleModal';
 
 // Componente do Chatbot Inteligente - Mantendo Layout Original
@@ -25,27 +28,75 @@ const Chatbot = ({ prompt }) => {
     const [moduleStatus, setModuleStatus] = useState({
         'credito-trabalhador': 'on',
         'credito-pessoal': 'on', 
-        'antecipacao': 'revisao',
-        'pagamento-antecipado': 'off',
-        'modulo-irpf': 'on'
+        'antecipacao': 'off',
+        'pagamento-antecipado': 'on',
+        'modulo-irpf': 'off'
     });
 
     // Função para buscar status dos módulos do Console VeloHub
     const fetchModuleStatus = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/module-status`, {
+            const url = `${API_BASE_URL}/module-status`;
+            console.log('🔍 Buscando status dos módulos em:', url);
+            console.log('🔍 API_BASE_URL completo:', API_BASE_URL);
+            
+            // Teste de conectividade básica
+            const testResponse = await fetch(`${API_BASE_URL}/test`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log('🧪 Teste de conectividade:', {
+                status: testResponse.status,
+                ok: testResponse.ok,
+                url: `${API_BASE_URL}/test`
+            });
+            
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
             
+            console.log('📊 Resposta recebida:', {
+                status: response.status,
+                statusText: response.statusText,
+                contentType: response.headers.get('content-type'),
+                ok: response.ok
+            });
+            
             if (response.ok) {
-                const statusData = await response.json();
-                setModuleStatus(statusData);
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const statusData = await response.json();
+                    console.log('✅ Status dos módulos recebido:', statusData);
+                    setModuleStatus(statusData);
+                } else {
+                    console.error('❌ Resposta não é JSON. Content-Type:', contentType);
+                    const textResponse = await response.text();
+                    console.error('❌ Conteúdo da resposta:', textResponse.substring(0, 200));
+                }
+            } else {
+                console.error('❌ Erro HTTP:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('❌ Conteúdo do erro:', errorText.substring(0, 200));
             }
         } catch (error) {
-            console.log('Erro ao buscar status dos módulos:', error);
+            console.error('❌ Erro ao buscar status dos módulos:', error);
+            console.error('❌ Stack trace:', error.stack);
+            
+            // Fallback: usar dados padrão se a API não estiver disponível
+            console.log('🔄 Usando dados padrão como fallback...');
+            const fallbackStatus = {
+                'credito-trabalhador': 'on',
+                'credito-pessoal': 'on',
+                'antecipacao': 'off',
+                'pagamento-antecipado': 'on',
+                'modulo-irpf': 'off'
+            };
+            setModuleStatus(fallbackStatus);
         }
     };
 
@@ -126,21 +177,7 @@ const Chatbot = ({ prompt }) => {
         );
     };
 
-    // Refresh automático do status e inicialização do VeloBot
-    useEffect(() => {
-        // Buscar status inicial
-        fetchModuleStatus();
-        
-        // Inicializar VeloBot (handshake das IAs) apenas quando a aba é acessada
-        initializeVeloBot();
-        
-        // Configurar refresh automático
-        const interval = setInterval(fetchModuleStatus, 3 * 60 * 1000); // 3 minutos (consistente com o sistema)
-        
-        return () => clearInterval(interval);
-    }, []);
-
-    // Obter userId do SSO
+    // Obter userId do SSO PRIMEIRO
     useEffect(() => {
         try {
             const session = getUserSession();
@@ -155,6 +192,25 @@ const Chatbot = ({ prompt }) => {
             console.error('❌ Chatbot: Erro ao obter sessão:', error);
             setUserId('anonymous');
         }
+    }, []);
+
+    // Inicializar VeloBot APÓS userId estar disponível
+    useEffect(() => {
+        if (userId) {
+            console.log('🚀 VeloBot: userId disponível, inicializando sistema...');
+            initializeVeloBot();
+        }
+    }, [userId]);
+
+    // Refresh automático do status (independente do userId)
+    useEffect(() => {
+        // Buscar status inicial
+        fetchModuleStatus();
+        
+        // Configurar refresh automático
+        const interval = setInterval(fetchModuleStatus, 3 * 60 * 1000); // 3 minutos (consistente com o sistema)
+        
+        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {

@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v1.5.5 | DATE: 2025-01-29 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.13.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -263,11 +263,11 @@ app.get('/api/faq/top10', async (req, res) => {
     // Simular frequência baseada em posição (temporário)
     // Em produção, isso deveria vir de logs de uso real
     const top10FAQ = botPerguntasData.slice(0, 10).map((item, index) => ({
-      pergunta: item.Pergunta || item.pergunta || 'Pergunta não disponível',
+      pergunta: item.pergunta || 'Pergunta não disponível',
       frequencia: Math.max(100 - (index * 10), 10), // Simular frequência decrescente
       _id: item._id,
-      palavrasChave: item["Palavras-chave"] || item.palavras_chave || '',
-      sinonimos: item.Sinonimos || item.sinonimos || ''
+      palavrasChave: item.palavrasChave || '',
+      sinonimos: item.sinonimos || ''
     }));
     
     console.log(`✅ Top 10 FAQ carregado: ${top10FAQ.length} perguntas`);
@@ -335,11 +335,11 @@ app.get('/api/data', async (req, res) => {
       
       articles: artigos.map(item => ({
         _id: item._id,
-        title: item.artigo_titulo || item.title,
-        content: item.artigo_conteudo || item.content,
-        category: item.categoria_titulo || item.category,
-        category_id: item.categoria_id || item.category_id,
-        keywords: item.keywords || [],
+        title: item.artigo_titulo,
+        content: item.artigo_conteudo,
+        category: item.categoria_titulo,
+        category_id: item.categoria_id,
+        tag: item.tag,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt
       })),
@@ -482,11 +482,11 @@ app.get('/api/articles', async (req, res) => {
     
     const mappedArticles = articles.map(item => ({
       _id: item._id,
-      title: item.artigo_titulo || item.title,
-      content: item.artigo_conteudo || item.content,
-      category: item.categoria_titulo || item.category,
-      category_id: item.categoria_id || item.category_id,
-      keywords: item.keywords || [],
+      title: item.artigo_titulo,
+      content: item.artigo_conteudo,
+      category: item.categoria_titulo,
+      category_id: item.categoria_id,
+      tag: item.tag,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt
     }));
@@ -644,9 +644,9 @@ function filterByKeywords(question, botPerguntasData) {
   const filtered = [];
   
   for (const item of botPerguntasData) {
-    const palavrasChave = (item["Palavras-chave"] || '').toLowerCase();
-    const sinonimos = (item.Sinonimos || '').toLowerCase();
-    const pergunta = (item.Pergunta || '').toLowerCase();
+    const palavrasChave = (item.palavrasChave || '').toLowerCase();
+    const sinonimos = (item.sinonimos || '').toLowerCase();
+    const pergunta = (item.pergunta || '').toLowerCase();
     
     // Combinar todos os campos de busca
     const searchText = `${palavrasChave} ${sinonimos} ${pergunta}`;
@@ -835,7 +835,7 @@ app.post('/api/chatbot/clarification', async (req, res) => {
       dataCache.updateBotPerguntas(botPerguntasData);
     }
     const directMatch = botPerguntasData.find(item => 
-      item.Pergunta && item.Pergunta.toLowerCase().includes(cleanQuestion.toLowerCase())
+      item.pergunta && item.pergunta.toLowerCase().includes(cleanQuestion.toLowerCase())
     );
     
     if (directMatch) {
@@ -847,10 +847,10 @@ app.post('/api/chatbot/clarification', async (req, res) => {
       // 3. RESPOSTA DIRETA
       const response = {
         success: true,
-        response: directMatch.Resposta || 'Resposta não encontrada',
+        response: directMatch.resposta || 'Resposta não encontrada',
         source: 'Bot_perguntas',
         sourceId: directMatch._id,
-        sourceRow: directMatch.Pergunta,
+        sourceRow: directMatch.pergunta,
         timestamp: new Date().toISOString(),
         sessionId: cleanSessionId
       };
@@ -867,10 +867,10 @@ app.post('/api/chatbot/clarification', async (req, res) => {
     if (searchResults.botPergunta) {
       const response = {
         success: true,
-        response: searchResults.botPergunta.Resposta || 'Resposta não encontrada',
+        response: searchResults.botPergunta.resposta || 'Resposta não encontrada',
         source: 'Bot_perguntas',
         sourceId: searchResults.botPergunta._id,
-        sourceRow: searchResults.botPergunta.Pergunta,
+        sourceRow: searchResults.botPergunta.pergunta,
         timestamp: new Date().toISOString(),
         sessionId: cleanSessionId
       };
@@ -1157,7 +1157,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           });
         } else if (aiAnalysis.bestMatch) {
           // IA identificou uma opção específica - usar diretamente
-          console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.Pergunta}"`);
+          console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.pergunta}"`);
           
           // Log do uso da IA
           if (logsService.isConfigured()) {
@@ -1166,10 +1166,10 @@ app.post('/api/chatbot/ask', async (req, res) => {
           
           return res.json({
             success: true,
-            response: aiAnalysis.bestMatch.Resposta || 'Resposta não encontrada',
+            response: aiAnalysis.bestMatch.resposta || 'Resposta não encontrada',
             source: 'Bot_perguntas',
             sourceId: aiAnalysis.bestMatch._id,
-            sourceRow: aiAnalysis.bestMatch.Pergunta,
+            sourceRow: aiAnalysis.bestMatch.pergunta,
             sessionId: session.id,
             timestamp: new Date().toISOString()
           });
@@ -1232,7 +1232,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
             });
           } else if (aiAnalysis.bestMatch) {
             // IA identificou uma opção específica - usar diretamente
-            console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.Pergunta}"`);
+            console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.pergunta}"`);
             
             // Log do uso da IA
             if (logsService.isConfigured()) {
@@ -1241,10 +1241,10 @@ app.post('/api/chatbot/ask', async (req, res) => {
             
             return res.json({
               success: true,
-              response: aiAnalysis.bestMatch.Resposta || 'Resposta não encontrada',
+              response: aiAnalysis.bestMatch.resposta || 'Resposta não encontrada',
               source: 'Bot_perguntas',
               sourceId: aiAnalysis.bestMatch._id,
-              sourceRow: aiAnalysis.bestMatch.Pergunta,
+              sourceRow: aiAnalysis.bestMatch.pergunta,
               sessionId: session.id,
               timestamp: new Date().toISOString()
             });
@@ -1306,7 +1306,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
     
     // Contexto do Bot_perguntas (estrutura MongoDB: Bot_perguntas)
     if (searchResults.botPergunta) {
-      context += `Pergunta relevante encontrada:\nPergunta: ${searchResults.botPergunta.Pergunta || searchResults.botPergunta.pergunta}\nResposta: ${searchResults.botPergunta.Resposta || searchResults.botPergunta.resposta}\n\n`;
+      context += `Pergunta relevante encontrada:\nPergunta: ${searchResults.botPergunta.pergunta}\nResposta: ${searchResults.botPergunta.resposta}\n\n`;
     }
     
     // Contexto dos artigos
@@ -1376,7 +1376,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
     } else {
       // Fallback para Bot_perguntas se nenhuma IA estiver configurada
       if (searchResults.botPergunta) {
-        response = searchResults.botPergunta.Resposta || searchResults.botPergunta.resposta || 'Resposta encontrada na base de conhecimento.';
+        response = searchResults.botPergunta.resposta || 'Resposta encontrada na base de conhecimento.';
         responseSource = 'bot_perguntas';
         console.log(`✅ Chat V2: Resposta do Bot_perguntas (IA não configurada)`);
         
@@ -1422,8 +1422,8 @@ app.post('/api/chatbot/ask', async (req, res) => {
       })),
       botPerguntaUsed: searchResults.botPergunta ? {
         id: searchResults.botPergunta._id,
-        question: searchResults.botPergunta.Pergunta || searchResults.botPergunta.pergunta,
-        answer: searchResults.botPergunta.Resposta || searchResults.botPergunta.resposta,
+        question: searchResults.botPergunta.pergunta,
+        answer: searchResults.botPergunta.resposta,
         relevanceScore: searchResults.botPergunta.relevanceScore
       } : null,
       sitesUsed: false, // Sites externos removidos
@@ -1767,6 +1767,17 @@ const server = app.listen(PORT, '0.0.0.0', (error) => {
   connectToMongo().catch(error => {
     console.warn('⚠️ MongoDB: Falha na conexão inicial, tentando reconectar...', error.message);
   });
+  
+  // Inicializar cache de status dos módulos
+  setTimeout(async () => {
+    try {
+      console.log('🚀 Inicializando cache de status dos módulos...');
+      await getModuleStatus();
+      console.log('✅ Cache de status inicializado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar cache de status:', error);
+    }
+  }, 2000); // Aguardar 2 segundos para MongoDB conectar
 });
 
 // Log de erro se o servidor não conseguir iniciar
@@ -1798,14 +1809,17 @@ process.on('unhandledRejection', (reason, promise) => {
 let moduleStatusCache = {
   'credito-trabalhador': 'on',
   'credito-pessoal': 'on',
-  'antecipacao': 'revisao',
-  'pagamento-antecipado': 'off',
-  'modulo-irpf': 'on'
+  'antecipacao': 'off',
+  'pagamento-antecipado': 'on',
+  'modulo-irpf': 'off'
 };
 
 // Timestamp do último cache para controle de validade
 let lastCacheUpdate = null;
 const CACHE_VALIDITY_MS = 3 * 60 * 1000; // 3 minutos
+
+// Forçar atualização imediata do cache na inicialização
+console.log('🔄 Forçando atualização inicial do cache de status...');
 
 /**
  * Busca o status mais recente dos módulos no MongoDB
@@ -1930,9 +1944,9 @@ app.get('/api/module-status', async (req, res) => {
     const fallbackStatus = {
       'credito-trabalhador': 'on',
       'credito-pessoal': 'on',
-      'antecipacao': 'revisao',
-      'pagamento-antecipado': 'off',
-      'modulo-irpf': 'on'
+      'antecipacao': 'off',
+      'pagamento-antecipado': 'on',
+      'modulo-irpf': 'off'
     };
     
     console.log('🔄 Usando status fallback:', fallbackStatus);

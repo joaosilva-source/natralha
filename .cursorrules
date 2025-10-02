@@ -24,7 +24,24 @@ Quero tudo analisado e pensado, e decisões acertadas com 100% de certeza da imp
 - o nome Index.html deve ser evitado para que parem de ocorrer erros de integrações e redirecionamentos das paginas criadas. os nomes deverão refletir os trechos trabalhados.
 - Sempre certifique-se de estar fazendo o deploy ou o push para o destino correto.Pushes do git jamais deverão ser trocados de reporitório acidentalmente e deploys no vercel ou no GCP deverão ocorrer com precisão.
 - Se a solicitação feita para uma tarefa ser excutada depende de mais informações, de confirmações de dados ou mais recursos, solicite essas informações antes de iniciar a tarefa.Mantenha o compliance com a diretiva nro 4 e não crie aleatóriamente dados adicionais para completar as tarefas.
-- Ao final da leitura das diretrizes, leia o arquivo DEPLOY_LOG.md e o arquivo CLEANUP_REPO.md se houver, e o layout guidelines s ehouver. a ter uma visão geral do projeto e das alterações realizadas.
+- Ao final da leitura das diretrizes, leia a lista de arquivos de referencia obrigatoria para manter a padronização e ter uma visão geral do projeto e das alterações realizadas.
+- Documentos que fornecem o padrão de trabalho ou referencias de execuão e formatação de informações deverão ser o padrão a ser seguido. Se for diagnosticado que o codigo difere do padrao oferecido, o código deverá ser alterado para atender ao padrão. Não altere o padrão sem solicitação explicita de que o padrão deverá ser atualizado. Não altere o documento padrão para deixar de alterar o codigo. 
+- Entenda que esse passos são necessários para manter a consistência e padronização do projeto por todas as partes do ecossistema 
+## 📋 ARQUIVOS OBRIGATÓRIOS PARA LEITURA
+
+### **Arquivos de Referência Obrigatória:**
+1. **DEPLOY_LOG.md** - Histórico de deploys e alterações realizadas
+2. **CLEANUP_REPO.md** - Instruções de limpeza e organização do repositório
+3. **LAYOUT_GUIDELINES.md** - Guia completo de layout, cores, tipografia e padrões visuais
+4. **listagem de schema de coleções do mongoD.rb** - Schemas das coleções MongoDB
+5. **README.md** - Documentação principal do projeto
+
+### **Arquivos de Padrão Visual:**
+- **src/styles/theme.js** - Tema Material-UI
+- **src/styles/globals.css** - Estilos globais
+- **LAYOUT_GUIDELINES.md** - Padrões visuais e de layout
+
+**IMPORTANTE:** Sempre consulte estes arquivos antes de fazer alterações para manter a consistência e padronização do projeto.
 
 ## 🚨 DIRETRIZES CRÍTICAS - COMANDOS GIT
 
@@ -59,4 +76,4 @@ Quero tudo analisado e pensado, e decisões acertadas com 100% de certeza da imp
 - ✅ Solicitação: "fazer commit" → Execução: `git commit -m "mensagem"`
 
 # Diretrizes de Trabalho
-<!-- VERSION: v1.2.0 | DATE: 2025-01-29 | AUTHOR:Lucas Gravina - VeloHub Development Team
+<!-- VERSION: v1.3.0 | DATE: 2024-12-19 | AUTHOR:Lucas Gravina - VeloHub Development Team
