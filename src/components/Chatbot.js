@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.4.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.6.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -317,28 +317,71 @@ const Chatbot = ({ prompt }) => {
     };
 
     // Função para clarification direto (sem re-análise da IA)
-    // Função para limpar e formatar texto da resposta
-    const formatResponseText = (text) => {
+    // Função para limpar e formatar texto da resposta (EXPANDIDA)
+    const formatResponseText = (text, source = 'unknown') => {
         if (!text) return '';
         
-        // Remover caracteres de escape JSON se presentes
         let cleanText = text;
         
-        // Se o texto contém JSON mal formatado, tentar extrair apenas o conteúdo
+        // 1. Processar JSON arrays (funcionalidade existente)
         if (text.includes('[{') && text.includes('}]')) {
             try {
-                // Tentar extrair apenas o texto limpo
-                cleanText = text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim();
-                // Se ficou vazio, usar o texto original
-                if (!cleanText) cleanText = text;
+                const jsonData = JSON.parse(text);
+                if (Array.isArray(jsonData)) {
+                    cleanText = jsonData.map((item, index) => {
+                        const title = item.title || `Passo ${index + 1}`;
+                        const content = item.content || '';
+                        return `${index + 1}. **${title}**\n\n${content}`;
+                    }).join('\n\n');
+                } else {
+                    cleanText = text;
+                }
             } catch (error) {
-                console.warn('⚠️ Erro ao limpar texto JSON:', error);
-                cleanText = text;
+                console.warn('⚠️ Erro ao parsear JSON:', error);
+                cleanText = text.replace(/\[|\]|\{|\}/g, '').replace(/"/g, '').trim();
             }
         }
         
-        // Limpar quebras de linha excessivas
-        cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+        // 2. Formatar listas numeradas simples
+        cleanText = cleanText.replace(/(\d+)[.)]\s*([^\n]+)/g, (match, number, content) => {
+            return `${number}. ${content.trim()}`;
+        });
+        
+        // 3. Formatar listas com bullets
+        cleanText = cleanText.replace(/^[\s]*[-*]\s*([^\n]+)/gm, (match, content) => {
+            return `• ${content.trim()}`;
+        });
+        
+        // 4. Formatar quebras de linha
+        cleanText = cleanText
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .split('\n')
+            .map(line => line.trim())
+            .join('\n')
+            .replace(/^\n+/, '')
+            .replace(/\n+$/, '');
+        
+        // 5. Formatar markdown básico
+        cleanText = cleanText
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        
+        // 6. Formatar links simples
+        cleanText = cleanText.replace(/(https?:\/\/[^\s]+)/g, (match, url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+        
+        // 7. Limpar formatação excessiva
+        cleanText = cleanText
+            .replace(/<(\w+)[^>]*>\s*<\/\1>/g, '')
+            .replace(/\s{3,}/g, ' ')
+            .replace(/\n{3,}/g, '\n\n');
+        
+        console.log(`🔧 Chatbot: Texto formatado (${source}) - ${cleanText.length} chars`);
         
         return cleanText;
     };
@@ -406,6 +449,7 @@ const Chatbot = ({ prompt }) => {
                         id: Date.now() + 1,
                         text: formattedResponse,
                         sender: 'bot',
+                        feedbackState: 'pending', // Adicionar estado de feedback
                         timestamp: new Date().toISOString(),
                         source: data.source,
                         sourceId: data.sourceId,
@@ -525,7 +569,7 @@ const Chatbot = ({ prompt }) => {
                 }
 
                 // Adicionar resposta do bot
-                const formattedResponseText = formatResponseText(responseText);
+                const formattedResponseText = formatResponseText(responseText, responseData.source || 'unknown');
                 const botMessage = {
                     id: data.messageId || Date.now() + 1,
                     text: formattedResponseText,
@@ -777,16 +821,8 @@ const Chatbot = ({ prompt }) => {
                                                 <li 
                                                     key={article.id} 
                                                     onClick={() => handleArticleClick(article)}
-                                                    className="cursor-pointer text-sm flex items-center gap-2 p-2 rounded transition-colors"
-                                                    style={{color: 'var(--blue-medium)', backgroundColor: 'transparent'}}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.backgroundColor = 'var(--cor-borda)';
-                                                        e.target.style.color = 'var(--blue-dark)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.backgroundColor = 'transparent';
-                                                        e.target.style.color = 'var(--blue-medium)';
-                                                    }}
+                                                    className="cursor-pointer text-sm flex items-center gap-2 p-2 rounded transition-colors hover:bg-gray-100"
+                                                    style={{color: 'var(--blue-medium)'}}
                                                 >
                                                     <BookOpen size={14} /> {article.title}
                                                 </li>

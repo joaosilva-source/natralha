@@ -513,6 +513,19 @@
 - **Descrição**: Correção crítica do bug que causava opções null no menu de clarification. Corrigido mapeamento de opções em generateClarificationMenuFromAI com fallback para option.pergunta e option.Pergunta. Adicionado tratamento de valores null/undefined. Resolve problema de opções vazias no menu de esclarecimento do VeloBot.
 - **Status**: ✅ Concluído com sucesso
 
+### **GitHub Push - Correções Completas do VeloBot**
+- **Data/Hora**: 2024-12-19 17:00:00
+- **Tipo**: GitHub Push
+- **Versão**: Múltiplas - Correções Completas
+- **Commit**: 80c3c79
+- **Arquivos Modificados**:
+  - `backend/server.js` (v2.14.0 - artigos relacionados + remoção logs duplicados)
+  - `src/components/Chatbot.js` (v1.4.0 - botões WhatsApp/Email + botão copiar + formatação)
+  - `backend/services/chatbot/searchService.js` (v2.6.0 - correção bug clarification)
+  - `listagem de schema de coleções do mongoD.rb` (v1.2.0 - schema user_activity)
+- **Descrição**: Correções completas do VeloBot incluindo: artigos relacionados na resposta final, botões WhatsApp/Email corrigidos, botão copiar implementado, formatação de texto corrigida, remoção de logs duplicados do Google Sheets (mantido apenas MongoDB), documentação do schema user_activity. Sistema de clarification totalmente funcional.
+- **Status**: ✅ Concluído com sucesso
+
 ---
 
 *Log atualizado automaticamente após push para GitHub*

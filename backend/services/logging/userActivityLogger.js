@@ -1,4 +1,5 @@
 // User Activity Logger - Log de atividades dos usuários
+// VERSION: v1.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
@@ -31,7 +32,7 @@ class UserActivityLogger {
   }
 
   /**
-   * Registra atividade do usuário
+   * Registra atividade do usuário seguindo schema console_conteudo.user_activity
    * @param {Object} activityData - Dados da atividade
    * @returns {Promise<boolean>} Sucesso da operação
    */
@@ -39,14 +40,15 @@ class UserActivityLogger {
     try {
       await this.connect();
 
+      const now = new Date();
       const activity = {
-        userId: activityData.userId,
-        action: activityData.action, // 'question_asked', 'feedback_given', 'article_viewed', etc.
+        colaboradorNome: activityData.colaboradorNome || activityData.userId || 'anonymous',
+        action: activityData.action, // 'question_asked', 'feedback_given', 'article_viewed', 'ai_button_used'
         details: activityData.details || {},
-        timestamp: new Date(),
         sessionId: activityData.sessionId || null,
         source: activityData.source || 'chatbot',
-        metadata: activityData.metadata || {}
+        createdAt: now,
+        updatedAt: now
       };
 
       const result = await this.collection.insertOne(activity);
@@ -63,85 +65,103 @@ class UserActivityLogger {
 
   /**
    * Registra pergunta do usuário
-   * @param {string} userId - ID do usuário
+   * @param {string} colaboradorNome - Nome do colaborador
    * @param {string} question - Pergunta feita
    * @param {string} sessionId - ID da sessão
    * @param {Object} metadata - Metadados adicionais
    * @returns {Promise<boolean>} Sucesso da operação
    */
-  async logQuestion(userId, question, sessionId = null, metadata = {}) {
+  async logQuestion(colaboradorNome, question, sessionId = null, metadata = {}) {
     return await this.logActivity({
-      userId,
+      colaboradorNome,
       action: 'question_asked',
       details: { question },
       sessionId,
-      metadata
+      source: 'chatbot'
     });
   }
 
   /**
    * Registra feedback do usuário
-   * @param {string} userId - ID do usuário
+   * @param {string} colaboradorNome - Nome do colaborador
    * @param {string} feedbackType - Tipo do feedback
    * @param {string} messageId - ID da mensagem
    * @param {string} sessionId - ID da sessão
    * @param {Object} metadata - Metadados adicionais
    * @returns {Promise<boolean>} Sucesso da operação
    */
-  async logFeedback(userId, feedbackType, messageId, sessionId = null, metadata = {}) {
+  async logFeedback(colaboradorNome, feedbackType, messageId, sessionId = null, metadata = {}) {
     return await this.logActivity({
-      userId,
+      colaboradorNome,
       action: 'feedback_given',
       details: { feedbackType, messageId },
       sessionId,
-      metadata
+      source: 'chatbot'
     });
   }
 
   /**
    * Registra visualização de artigo
-   * @param {string} userId - ID do usuário
+   * @param {string} colaboradorNome - Nome do colaborador
    * @param {string} articleId - ID do artigo
    * @param {string} articleTitle - Título do artigo
    * @param {string} sessionId - ID da sessão
    * @returns {Promise<boolean>} Sucesso da operação
    */
-  async logArticleView(userId, articleId, articleTitle, sessionId = null) {
+  async logArticleView(colaboradorNome, articleId, articleTitle, sessionId = null) {
     return await this.logActivity({
-      userId,
+      colaboradorNome,
       action: 'article_viewed',
       details: { articleId, articleTitle },
-      sessionId
+      sessionId,
+      source: 'chatbot'
+    });
+  }
+
+  /**
+   * Registra uso do botão AI
+   * @param {string} colaboradorNome - Nome do colaborador
+   * @param {string} formatType - Tipo de formatação (whatsapp/email)
+   * @param {string} sessionId - ID da sessão
+   * @returns {Promise<boolean>} Sucesso da operação
+   */
+  async logAIButtonUsage(colaboradorNome, formatType, sessionId = null) {
+    return await this.logActivity({
+      colaboradorNome,
+      action: 'ai_button_used',
+      details: { formatType },
+      sessionId,
+      source: 'ai_button'
     });
   }
 
   /**
    * Obtém atividades do usuário
-   * @param {string} userId - ID do usuário
+   * @param {string} colaboradorNome - Nome do colaborador
    * @param {number} limit - Limite de resultados
    * @param {Date} startDate - Data de início (opcional)
    * @param {Date} endDate - Data de fim (opcional)
    * @returns {Promise<Array>} Atividades do usuário
    */
-  async getUserActivities(userId, limit = 50, startDate = null, endDate = null) {
+  async getUserActivities(colaboradorNome, limit = 50, startDate = null, endDate = null) {
     try {
       await this.connect();
 
-      const filter = { userId };
+      const filter = { colaboradorNome };
       
       if (startDate || endDate) {
-        filter.timestamp = {};
-        if (startDate) filter.timestamp.$gte = startDate;
-        if (endDate) filter.timestamp.$lte = endDate;
+        filter.createdAt = {};
+        if (startDate) filter.createdAt.$gte = startDate;
+        if (endDate) filter.createdAt.$lte = endDate;
       }
 
       const activities = await this.collection
         .find(filter)
-        .sort({ timestamp: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
 
-      console.log(`📋 ActivityLogger: ${activities.length} atividades obtidas para usuário ${userId}`);
+      console.log(`📋 ActivityLogger: ${activities.length} atividades obtidas para colaborador ${colaboradorNome}`);
       
       return activities;
 
@@ -162,7 +182,7 @@ class UserActivityLogger {
       await this.connect();
 
       const filter = {
-        timestamp: {
+        createdAt: {
           $gte: startDate,
           $lte: endDate
         }
@@ -174,7 +194,7 @@ class UserActivityLogger {
           $group: {
             _id: '$action',
             count: { $sum: 1 },
-            uniqueUsers: { $addToSet: '$userId' }
+            uniqueUsers: { $addToSet: '$colaboradorNome' }
           }
         },
         {
@@ -190,7 +210,7 @@ class UserActivityLogger {
       const stats = await this.collection.aggregate(pipeline).toArray();
       
       // Calcular total de usuários únicos
-      const totalUniqueUsers = await this.collection.distinct('userId', filter);
+      const totalUniqueUsers = await this.collection.distinct('colaboradorNome', filter);
       
       const result = {
         period: { start: startDate, end: endDate },
@@ -223,18 +243,18 @@ class UserActivityLogger {
       const filter = {};
       
       if (startDate || endDate) {
-        filter.timestamp = {};
-        if (startDate) filter.timestamp.$gte = startDate;
-        if (endDate) filter.timestamp.$lte = endDate;
+        filter.createdAt = {};
+        if (startDate) filter.createdAt.$gte = startDate;
+        if (endDate) filter.createdAt.$lte = endDate;
       }
 
       const pipeline = [
         { $match: filter },
         {
           $group: {
-            _id: '$userId',
+            _id: '$colaboradorNome',
             activityCount: { $sum: 1 },
-            lastActivity: { $max: '$timestamp' },
+            lastActivity: { $max: '$createdAt' },
             actions: { $addToSet: '$action' }
           }
         },

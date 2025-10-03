@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
- * VERSION: v1.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.6.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -11,6 +11,7 @@ import { API_BASE_URL } from './config/api-config';
 import LoginPage from './components/LoginPage';
 import Chatbot from './components/Chatbot';
 import SupportModal from './components/SupportModal';
+import { formatArticleContent, formatPreviewText } from './utils/textFormatter';
 
 // Sistema de gerenciamento de estado para modal crítico
 const CriticalModalManager = {
@@ -638,7 +639,7 @@ const HomePage = ({ setCriticalNews }) => {
                                  <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200 line-clamp-2 mb-1">{item.title}</h4>
                                  <div 
                                      className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 prose prose-xs dark:prose-invert max-w-none"
-                                     dangerouslySetInnerHTML={{ __html: item.content || '' }}
+                                     dangerouslySetInnerHTML={{ __html: formatPreviewText(item.content || '', 100) }}
                                  />
                                  <span className="text-xs text-green-600 dark:text-green-400">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</span>
                             </div>
@@ -1510,7 +1511,7 @@ const ArtigosPage = () => {
                                             {article.content && (
                                                  <div 
                                                      className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 prose prose-sm dark:prose-invert max-w-none"
-                                                     dangerouslySetInnerHTML={renderHTML(article.content)}
+                                                     dangerouslySetInnerHTML={{ __html: formatArticleContent(article.content, 200) }}
                                                  />
                                             )}
                                             {article.tag && (

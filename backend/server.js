@@ -21,8 +21,8 @@ const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 // Importar serviços do chatbot
-// VERSION: v2.10.0 | DATE: 2025-01-29 | AUTHOR: Lucas Gravina - VeloHub Development Team
-let aiService, searchService, sessionService, feedbackService, logsService, dataCache, userActivityLogger;
+// VERSION: v2.12.0 | DATE: 2024-12-19 | AUTHOR: Lucas Gravina - VeloHub Development Team
+let aiService, searchService, sessionService, logsService, dataCache, userActivityLogger, botFeedbackService, responseFormatter;
 
 console.log('🔄 Iniciando carregamento de serviços...');
 
@@ -39,10 +39,6 @@ try {
   sessionService = require('./services/chatbot/sessionService');
   console.log('✅ sessionService carregado');
   
-  console.log('📦 Carregando feedbackService...');
-  feedbackService = require('./services/chatbot/feedbackService');
-  console.log('✅ feedbackService carregado');
-  
   console.log('📦 Carregando logsService...');
   logsService = require('./services/chatbot/logsService');
   console.log('✅ logsService carregado');
@@ -54,6 +50,14 @@ try {
   console.log('📦 Carregando userActivityLogger...');
   userActivityLogger = require('./services/logging/userActivityLogger');
   console.log('✅ userActivityLogger carregado');
+  
+  console.log('📦 Carregando botFeedbackService...');
+  botFeedbackService = require('./services/chatbot/botFeedbackService');
+  console.log('✅ botFeedbackService carregado');
+  
+  console.log('📦 Carregando responseFormatter...');
+  responseFormatter = require('./services/chatbot/responseFormatter');
+  console.log('✅ responseFormatter carregado');
   
   console.log('🎉 Todos os serviços carregados com sucesso!');
 } catch (error) {
@@ -865,7 +869,7 @@ app.post('/api/chatbot/clarification', async (req, res) => {
       // 4. RESPOSTA DIRETA COM ARTIGOS
       const response = {
         success: true,
-        response: directMatch.resposta || 'Resposta não encontrada',
+        response: responseFormatter.formatCacheResponse(directMatch.resposta || 'Resposta não encontrada', 'clarification'),
         source: 'Bot_perguntas',
         sourceId: directMatch._id,
         sourceRow: directMatch.pergunta,
@@ -902,7 +906,7 @@ app.post('/api/chatbot/clarification', async (req, res) => {
       
       const response = {
         success: true,
-        response: searchResults.botPergunta.resposta || 'Resposta não encontrada',
+        response: responseFormatter.formatCacheResponse(searchResults.botPergunta.resposta || 'Resposta não encontrada', 'clarification_fallback'),
         source: 'Bot_perguntas',
         sourceId: searchResults.botPergunta._id,
         sourceRow: searchResults.botPergunta.pergunta,
@@ -918,7 +922,7 @@ app.post('/api/chatbot/clarification', async (req, res) => {
     // 5. RESPOSTA PADRÃO
     const response = {
       success: true,
-      response: 'Não consegui encontrar uma resposta precisa para sua pergunta. Pode fornecer mais detalhes ou reformular sua pergunta para que eu possa ajudá-lo melhor?',
+      response: responseFormatter.formatFallbackResponse('Não consegui encontrar uma resposta precisa para sua pergunta. Pode fornecer mais detalhes ou reformular sua pergunta para que eu possa ajudá-lo melhor?'),
       source: 'fallback',
       timestamp: new Date().toISOString(),
       sessionId: cleanSessionId
@@ -1189,7 +1193,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           
           return res.json({
             success: true,
-            response: aiAnalysis.bestMatch.resposta || 'Resposta não encontrada',
+            response: responseFormatter.formatCacheResponse(aiAnalysis.bestMatch.resposta || 'Resposta não encontrada', 'ai_analysis'),
             source: 'Bot_perguntas',
             sourceId: aiAnalysis.bestMatch._id,
             sourceRow: aiAnalysis.bestMatch.pergunta,
@@ -1201,7 +1205,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           
           return res.json({
             success: true,
-            response: aiResult.response,
+            response: responseFormatter.formatAIResponse(aiResult.response, aiResult.provider),
             source: 'ai',
             aiProvider: aiResult.provider,
             model: aiResult.model,
@@ -1253,7 +1257,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
             
             return res.json({
               success: true,
-              response: aiAnalysis.bestMatch.resposta || 'Resposta não encontrada',
+              response: responseFormatter.formatCacheResponse(aiAnalysis.bestMatch.resposta || 'Resposta não encontrada', 'ai_analysis'),
               source: 'Bot_perguntas',
               sourceId: aiAnalysis.bestMatch._id,
               sourceRow: aiAnalysis.bestMatch.pergunta,
@@ -1265,7 +1269,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
             
             return res.json({
               success: true,
-              response: fallbackResult.response,
+              response: responseFormatter.formatAIResponse(fallbackResult.response, fallbackResult.provider),
               source: 'ai',
               aiProvider: fallbackResult.provider,
               model: fallbackResult.model,
@@ -1356,7 +1360,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           primaryAI
         );
         
-        response = aiResult.response;
+        response = responseFormatter.formatAIResponse(aiResult.response, aiResult.provider);
         responseSource = aiResult.success ? 'ai' : 'error';
         aiProvider = aiResult.provider;
         
@@ -1369,7 +1373,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         
       } catch (aiError) {
         console.error('❌ Chat V2: Erro na IA:', aiError.message);
-        response = 'Desculpe, não consegui processar sua pergunta no momento. Tente novamente.';
+        response = responseFormatter.formatFallbackResponse('Desculpe, não consegui processar sua pergunta no momento. Tente novamente.');
         responseSource = 'error';
         aiProvider = 'Error';
         
@@ -1381,7 +1385,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
     } else {
       // Fallback para Bot_perguntas se nenhuma IA estiver configurada
       if (searchResults.botPergunta) {
-        response = searchResults.botPergunta.resposta || 'Resposta encontrada na base de conhecimento.';
+        response = responseFormatter.formatCacheResponse(searchResults.botPergunta.resposta || 'Resposta encontrada na base de conhecimento.', 'bot_perguntas');
         responseSource = 'bot_perguntas';
         console.log(`✅ Chat V2: Resposta do Bot_perguntas (IA não configurada)`);
         
@@ -1390,7 +1394,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           await logsService.logMongoDBResponse(cleanUserId, cleanQuestion, searchResults.botPergunta._id);
         }
       } else {
-        response = 'Não consegui encontrar uma resposta precisa para sua pergunta. Pode fornecer mais detalhes ou reformular sua pergunta para que eu possa ajudá-lo melhor?';
+        response = responseFormatter.formatFallbackResponse('Não consegui encontrar uma resposta precisa para sua pergunta. Pode fornecer mais detalhes ou reformular sua pergunta para que eu possa ajudá-lo melhor?');
         responseSource = 'no_results';
         console.log(`❌ Chat V2: Nenhuma resposta encontrada`);
         
@@ -1462,10 +1466,10 @@ app.post('/api/chatbot/ask', async (req, res) => {
   }
 });
 
-// API de Feedback
+// API de Feedback - MongoDB apenas
 app.post('/api/chatbot/feedback', async (req, res) => {
   try {
-    const { messageId, feedbackType, comment, userId, sessionId, question, answer } = req.body;
+    const { messageId, feedbackType, comment, userId, sessionId, question, answer, source, aiProvider, responseSource } = req.body;
 
     // Validação básica
     if (!messageId || !feedbackType) {
@@ -1487,29 +1491,25 @@ app.post('/api/chatbot/feedback', async (req, res) => {
 
     console.log(`📝 Feedback: Novo feedback de ${cleanUserId} - ${feedbackType} para mensagem ${messageId}`);
 
-    // Preparar dados do feedback
-    const feedbackData = {
-      userId: cleanUserId,
+
+    // Registrar feedback no MongoDB usando botFeedbackService
+    const feedbackSuccess = await botFeedbackService.logFeedback({
+      colaboradorNome: cleanUserId,
       messageId: messageId,
       feedbackType: feedbackType,
       comment: comment || '',
       question: question || '',
       answer: answer || '',
       sessionId: cleanSessionId,
-      metadata: {
-        timestamp: new Date(),
-        userAgent: req.get('User-Agent'),
-        ip: req.ip
-      }
-    };
-
-    // Registrar feedback no Google Sheets
-    const feedbackSuccess = await feedbackService.logFeedback(feedbackData);
+      source: source || 'chatbot',
+      aiProvider: aiProvider || null,
+      responseSource: responseSource || 'bot_perguntas'
+    });
 
     if (!feedbackSuccess) {
       return res.status(500).json({
         success: false,
-        error: 'Erro ao registrar feedback no Google Sheets'
+        error: 'Erro ao registrar feedback no banco de dados'
       });
     }
 
@@ -1566,18 +1566,13 @@ app.post('/api/chatbot/activity', async (req, res) => {
 
     console.log(`📊 Activity: Nova atividade de ${cleanUserId} - ${action}`);
 
-    // Preparar dados da atividade
+    // Preparar dados da atividade seguindo schema user_activity
     const activityData = {
-      userId: cleanUserId,
+      colaboradorNome: cleanUserId,
       action: action,
       details: details || {},
       sessionId: cleanSessionId,
-      source: cleanSource,
-      metadata: {
-        timestamp: new Date(),
-        userAgent: req.get('User-Agent'),
-        ip: req.ip
-      }
+      source: cleanSource
     };
 
     // Registrar atividade no MongoDB
@@ -1712,13 +1707,13 @@ app.post('/api/chatbot/ai-response', async (req, res) => {
       });
     }
 
-    // Log da atividade
-    await userActivityLogger.logQuestion(cleanUserId, `AI Button: ${question}`, cleanSessionId);
+    // Log da atividade do botão AI
+    await userActivityLogger.logAIButtonUsage(cleanUserId, formatType || 'conversational', cleanSessionId);
 
     // Resposta de sucesso
     const responseData = {
       success: true,
-      response: aiResult.response,
+      response: responseFormatter.formatAIResponse(aiResult.response, aiResult.provider),
       aiProvider: aiResult.provider,
       model: aiResult.model,
       source: 'ai_button',
