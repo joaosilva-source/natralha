@@ -487,9 +487,30 @@
 - **Tipo**: GitHub Push
 - **Versão**: backend/server.js v2.13.1
 - **Commit**: 448a7ec
-- **Arquivos Modificados**: 
+- **Arquivos Modificados**:
   - `backend/server.js` (v2.13.1 - correção variável userEmail)
 - **Descrição**: Correção crítica da variável userEmail não definida que causava erro 500 no endpoint /api/chatbot/ask. Substituídas todas as referências de userEmail por cleanUserId (que contém o email do usuário). Resolve problema de crash da API do chatbot quando usuário enviava perguntas.
+- **Status**: ✅ Concluído com sucesso
+
+### **GitHub Push - Atualização Documentação Sistema de Logs**
+- **Data/Hora**: 2024-12-19 16:15:00
+- **Tipo**: GitHub Push
+- **Versão**: Documentação v1.1.0
+- **Commit**: 0fc2de9
+- **Arquivos Modificados**:
+  - `DEPLOY_LOG.md` (v1.1.0 - atualização log de deploys)
+  - `DIAGRAMA_FUNCIONAMENTO_BUSCA.txt` (v1.1.0 - atualização diagrama)
+- **Descrição**: Atualização da documentação com análise completa do sistema de logs do VeloBot. Verificação e confirmação do funcionamento dos logs MongoDB e Google Sheets. Documentação do fluxo de logging das perguntas e interações dos usuários.
+- **Status**: ✅ Concluído com sucesso
+
+### **GitHub Push - Correção Bug Clarification Opções Null**
+- **Data/Hora**: 2024-12-19 16:30:00
+- **Tipo**: GitHub Push
+- **Versão**: backend/services/chatbot/searchService.js v2.6.0
+- **Commit**: 3285608
+- **Arquivos Modificados**:
+  - `backend/services/chatbot/searchService.js` (v2.6.0 - correção bug clarification)
+- **Descrição**: Correção crítica do bug que causava opções null no menu de clarification. Corrigido mapeamento de opções em generateClarificationMenuFromAI com fallback para option.pergunta e option.Pergunta. Adicionado tratamento de valores null/undefined. Resolve problema de opções vazias no menu de esclarecimento do VeloBot.
 - **Status**: ✅ Concluído com sucesso
 
 ---

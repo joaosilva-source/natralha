@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.3.5 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.4.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -317,6 +317,50 @@ const Chatbot = ({ prompt }) => {
     };
 
     // Função para clarification direto (sem re-análise da IA)
+    // Função para limpar e formatar texto da resposta
+    const formatResponseText = (text) => {
+        if (!text) return '';
+        
+        // Remover caracteres de escape JSON se presentes
+        let cleanText = text;
+        
+        // Se o texto contém JSON mal formatado, tentar extrair apenas o conteúdo
+        if (text.includes('[{') && text.includes('}]')) {
+            try {
+                // Tentar extrair apenas o texto limpo
+                cleanText = text.replace(/\[.*?\]/g, '').replace(/\{.*?\}/g, '').trim();
+                // Se ficou vazio, usar o texto original
+                if (!cleanText) cleanText = text;
+            } catch (error) {
+                console.warn('⚠️ Erro ao limpar texto JSON:', error);
+                cleanText = text;
+            }
+        }
+        
+        // Limpar quebras de linha excessivas
+        cleanText = cleanText.replace(/\n{3,}/g, '\n\n');
+        
+        return cleanText;
+    };
+
+    // Função para copiar texto para área de transferência
+    const handleCopyText = async (text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            console.log('✅ Texto copiado para área de transferência');
+            // Opcional: mostrar feedback visual
+        } catch (error) {
+            console.error('❌ Erro ao copiar texto:', error);
+            // Fallback para navegadores mais antigos
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+    };
+
     const handleClarificationClick = async (option) => {
         try {
             const trimmedInput = option.trim();
@@ -357,17 +401,37 @@ const Chatbot = ({ prompt }) => {
                     }
 
                     // Adicionar resposta do bot
+                    const formattedResponse = formatResponseText(data.response);
                     const botMessage = {
                         id: Date.now() + 1,
-                        text: data.response,
+                        text: formattedResponse,
                         sender: 'bot',
                         timestamp: new Date().toISOString(),
                         source: data.source,
                         sourceId: data.sourceId,
-                        sourceRow: data.sourceRow
+                        sourceRow: data.sourceRow,
+                        // Campos necessários para botões WhatsApp/Email
+                        originalQuestion: trimmedInput,
+                        botPerguntaResponse: formattedResponse,
+                        articleContent: data.articles && data.articles.length > 0 ? data.articles[0].content : null,
+                        hasArticle: data.articles && data.articles.length > 0,
+                        articleId: data.articles && data.articles.length > 0 ? data.articles[0].id : null
                     };
 
-                    setMessages(prev => [...prev, botMessage]);
+                    let finalMessages = [...messages, botMessage];
+
+                    // Adicionar artigos relacionados se disponíveis
+                    if (data.articles && data.articles.length > 0) {
+                        const articlesMessage = {
+                            id: Date.now() + 2,
+                            type: 'articles',
+                            articles: data.articles,
+                            timestamp: new Date().toISOString()
+                        };
+                        finalMessages.push(articlesMessage);
+                    }
+
+                    setMessages(finalMessages);
                 } else {
                     throw new Error(data.error || 'Erro na resposta da API');
                 }
@@ -461,16 +525,17 @@ const Chatbot = ({ prompt }) => {
                 }
 
                 // Adicionar resposta do bot
+                const formattedResponseText = formatResponseText(responseText);
                 const botMessage = {
                     id: data.messageId || Date.now() + 1,
-                    text: responseText,
+                    text: formattedResponseText,
                     sender: 'bot',
                     feedbackState: 'pending',
                     source: data.source || (data.data ? data.data.source : 'unknown'),
                     timestamp: data.timestamp || (data.data ? data.data.timestamp : new Date().toISOString()),
                     // Dados para o botão IA
                     originalQuestion: trimmedInput,
-                    botPerguntaResponse: responseText,
+                    botPerguntaResponse: formattedResponseText,
                     articleContent: data.articles && data.articles.length > 0 ? data.articles[0].content : null,
                     hasArticle: data.articles && data.articles.length > 0,
                     articleId: data.articles && data.articles.length > 0 ? data.articles[0].id : null,
@@ -793,6 +858,17 @@ const Chatbot = ({ prompt }) => {
                                         <div className="flex gap-2 mt-2">
                                             <button onClick={() => handleFeedback(msg.id, 'positive')} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsUp size={16}/></button>
                                             <button onClick={() => openFeedbackModal(msg)} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--yellow)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsDown size={16}/></button>
+                                            {/* Botão Copiar */}
+                                            <button 
+                                                onClick={() => handleCopyText(msg.text)} 
+                                                className="p-1 transition-colors" 
+                                                style={{color: 'var(--cor-texto-secundario)'}} 
+                                                onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} 
+                                                onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}
+                                                title="Copiar texto"
+                                            >
+                                                📋
+                                            </button>
                                         </div>
                                     )}
                                     {msg.feedbackState === 'given' && (

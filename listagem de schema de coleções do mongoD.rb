@@ -1,5 +1,5 @@
 listagem de schema de coleções do mongoDB
-<!-- VERSION: v1.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team -->
+<!-- VERSION: v1.2.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team -->
   🗄️ Database Principal: console_conteudo
 //schema console_conteudo.Artigos
 {
@@ -35,6 +35,32 @@ createdAt: Date,                // Data de criação
 updatedAt: Date                 // Data de atualização
 }
 
+//schema console_conteudo.user_activity
+{
+_id: ObjectId,
+userId: String,                    // ID do usuário
+action: String,                    // Tipo de ação (question_asked, feedback_given, article_viewed, ai_button_used)
+details: {                         // Detalhes específicos da ação
+  question: String,                // Pergunta feita (para question_asked)
+  feedbackType: String,            // Tipo de feedback (positive/negative)
+  messageId: String,               // ID da mensagem (para feedback)
+  articleId: String,               // ID do artigo (para article_viewed)
+  articleTitle: String,            // Título do artigo
+  formatType: String               // Tipo de formatação (whatsapp/email)
+},
+sessionId: String,                 // ID da sessão
+source: String,                    // Fonte da ação (chatbot, ai_button, etc.)
+metadata: {                        // Metadados adicionais
+  timestamp: Date,                 // Data e hora da ação
+  userAgent: String,               // User agent do navegador
+  ip: String,                      // IP do usuário
+  hasComment: Boolean,             // Se tem comentário (para feedback)
+  commentLength: Number            // Tamanho do comentário
+},
+createdAt: Date,                   // Data de criação
+updatedAt: Date                    // Data de atualização
+}
+
 🗄️ Database: console_chamados
 
 // schema DB console_chamados.tk_gestão
@@ -59,6 +85,7 @@ _data_hora: Date,               // Data e hora
 createdAt: Date,                // Data de criação
 updatedAt: Date                 // Data de atualização
 }
+
 
 🗄️ Database: console_config
 

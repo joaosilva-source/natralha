@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v2.13.1 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.14.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -844,7 +844,25 @@ app.post('/api/chatbot/clarification', async (req, res) => {
       // 2. LOG DA ATIVIDADE
       await userActivityLogger.logQuestion(cleanUserId, cleanQuestion, cleanSessionId);
       
-      // 3. RESPOSTA DIRETA
+      // 3. BUSCAR ARTIGOS RELACIONADOS
+      let articlesData = dataCache.getArticlesData();
+      if (!articlesData) {
+        console.log('⚠️ Clarification Direto: Cache de artigos inválido, carregando do MongoDB...');
+        articlesData = await getArticlesData();
+        dataCache.updateArticles(articlesData);
+      }
+      
+      // Filtrar artigos por palavras-chave da pergunta
+      const filteredArticles = filterByKeywords(cleanQuestion, articlesData);
+      const relatedArticles = filteredArticles.slice(0, 3).map(article => ({
+        id: article._id,
+        title: article.artigo_titulo,
+        content: article.artigo_conteudo.substring(0, 150) + '...',
+        tag: article.tag,
+        relevanceScore: 0.8 // Score padrão para artigos relacionados
+      }));
+      
+      // 4. RESPOSTA DIRETA COM ARTIGOS
       const response = {
         success: true,
         response: directMatch.resposta || 'Resposta não encontrada',
@@ -852,10 +870,11 @@ app.post('/api/chatbot/clarification', async (req, res) => {
         sourceId: directMatch._id,
         sourceRow: directMatch.pergunta,
         timestamp: new Date().toISOString(),
-        sessionId: cleanSessionId
+        sessionId: cleanSessionId,
+        articles: relatedArticles
       };
       
-      console.log(`✅ Clarification Direto: Resposta enviada para ${cleanUserId}`);
+      console.log(`✅ Clarification Direto: Resposta com ${relatedArticles.length} artigos enviada para ${cleanUserId}`);
       return res.json(response);
     }
     
@@ -865,6 +884,22 @@ app.post('/api/chatbot/clarification', async (req, res) => {
     const searchResults = await searchService.performHybridSearch(cleanQuestion, botPerguntasData, []);
     
     if (searchResults.botPergunta) {
+      // Buscar artigos relacionados também no fallback
+      let articlesData = dataCache.getArticlesData();
+      if (!articlesData) {
+        articlesData = await getArticlesData();
+        dataCache.updateArticles(articlesData);
+      }
+      
+      const filteredArticles = filterByKeywords(cleanQuestion, articlesData);
+      const relatedArticles = filteredArticles.slice(0, 3).map(article => ({
+        id: article._id,
+        title: article.artigo_titulo,
+        content: article.artigo_conteudo.substring(0, 150) + '...',
+        tag: article.tag,
+        relevanceScore: 0.8
+      }));
+      
       const response = {
         success: true,
         response: searchResults.botPergunta.resposta || 'Resposta não encontrada',
@@ -872,10 +907,11 @@ app.post('/api/chatbot/clarification', async (req, res) => {
         sourceId: searchResults.botPergunta._id,
         sourceRow: searchResults.botPergunta.pergunta,
         timestamp: new Date().toISOString(),
-        sessionId: cleanSessionId
+        sessionId: cleanSessionId,
+        articles: relatedArticles
       };
       
-      console.log(`✅ Clarification Direto: Resposta via busca tradicional para ${cleanUserId}`);
+      console.log(`✅ Clarification Direto: Resposta via busca tradicional com ${relatedArticles.length} artigos para ${cleanUserId}`);
       return res.json(response);
     }
     
@@ -1043,11 +1079,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
     // Log da atividade (MongoDB)
     await userActivityLogger.logQuestion(cleanUserId, cleanQuestion, session.id);
 
-    // Log para Google Sheets (RESTAURADO)
-    if (logsService.isConfigured()) {
-      await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Pergunta Inicial');
-    }
-
     // Buscar dados do MongoDB
     const client = await connectToMongo();
     const db = client.db('console_conteudo');
@@ -1142,10 +1173,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
           // IA identificou múltiplas opções relevantes - mostrar menu de esclarecimento
           const clarificationMenu = searchService.generateClarificationMenuFromAI(aiAnalysis.relevantOptions, cleanQuestion);
           
-          // Log da necessidade de esclarecimento
-          if (logsService.isConfigured()) {
-            await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação IA');
-          }
 
           return res.json({
             success: true,
@@ -1159,10 +1186,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
           // IA identificou uma opção específica - usar diretamente
           console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.pergunta}"`);
           
-          // Log do uso da IA
-          if (logsService.isConfigured()) {
-            await logsService.logAIResponse(cleanUserId, cleanQuestion, 'Gemini');
-          }
           
           return res.json({
             success: true,
@@ -1175,9 +1198,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
           });
         } else {
           // IA não encontrou opções - usar resposta da IA primária
-          if (logsService.isConfigured()) {
-            await logsService.logAIResponse(cleanUserId, cleanQuestion, aiResult.provider);
-          }
           
           return res.json({
             success: true,
@@ -1217,10 +1237,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
             // IA identificou múltiplas opções relevantes - mostrar menu de esclarecimento
             const clarificationMenu = searchService.generateClarificationMenuFromAI(aiAnalysis.relevantOptions, cleanQuestion);
             
-            // Log da necessidade de esclarecimento
-            if (logsService.isConfigured()) {
-              await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação IA');
-            }
 
             return res.json({
               success: true,
@@ -1234,10 +1250,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
             // IA identificou uma opção específica - usar diretamente
             console.log(`✅ Chat V2: IA identificou match específico: "${aiAnalysis.bestMatch.pergunta}"`);
             
-            // Log do uso da IA
-            if (logsService.isConfigured()) {
-              await logsService.logAIResponse(cleanUserId, cleanQuestion, 'Gemini');
-            }
             
             return res.json({
               success: true,
@@ -1250,9 +1262,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
             });
           } else {
             // IA não encontrou opções - usar resposta da IA secundária
-            if (logsService.isConfigured()) {
-              await logsService.logAIResponse(cleanUserId, cleanQuestion, fallbackResult.provider);
-            }
             
             return res.json({
               success: true,
@@ -1283,10 +1292,6 @@ app.post('/api/chatbot/ask', async (req, res) => {
     if (clarificationResult.needsClarification) {
       const clarificationMenu = searchService.generateClarificationMenu(clarificationResult.matches, cleanQuestion);
       
-      // Log da necessidade de esclarecimento
-      if (logsService.isConfigured()) {
-        await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação Tradicional');
-      }
 
       return res.json({
         success: true,
