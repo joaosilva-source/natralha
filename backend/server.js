@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v2.13.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.13.1 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -1123,7 +1123,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         '', // context vazio para resposta direta
         sessionHistory,
         cleanUserId,
-        userEmail,
+        cleanUserId,
         null, // searchResults
         'conversational',
         primaryAI
@@ -1144,7 +1144,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           
           // Log da necessidade de esclarecimento
           if (logsService.isConfigured()) {
-            await logsService.logAIUsage(userEmail, cleanQuestion, 'Clarificação IA');
+            await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação IA');
           }
 
           return res.json({
@@ -1161,7 +1161,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           
           // Log do uso da IA
           if (logsService.isConfigured()) {
-            await logsService.logAIResponse(userEmail, cleanQuestion, 'Gemini');
+            await logsService.logAIResponse(cleanUserId, cleanQuestion, 'Gemini');
           }
           
           return res.json({
@@ -1176,7 +1176,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         } else {
           // IA não encontrou opções - usar resposta da IA primária
           if (logsService.isConfigured()) {
-            await logsService.logAIResponse(userEmail, cleanQuestion, aiResult.provider);
+            await logsService.logAIResponse(cleanUserId, cleanQuestion, aiResult.provider);
           }
           
           return res.json({
@@ -1198,7 +1198,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           '',
           sessionHistory,
           cleanUserId,
-          userEmail,
+          cleanUserId,
           null,
           'conversational',
           fallbackAI
@@ -1219,7 +1219,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
             
             // Log da necessidade de esclarecimento
             if (logsService.isConfigured()) {
-              await logsService.logAIUsage(userEmail, cleanQuestion, 'Clarificação IA');
+              await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação IA');
             }
 
             return res.json({
@@ -1236,7 +1236,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
             
             // Log do uso da IA
             if (logsService.isConfigured()) {
-              await logsService.logAIResponse(userEmail, cleanQuestion, 'Gemini');
+              await logsService.logAIResponse(cleanUserId, cleanQuestion, 'Gemini');
             }
             
             return res.json({
@@ -1251,7 +1251,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           } else {
             // IA não encontrou opções - usar resposta da IA secundária
             if (logsService.isConfigured()) {
-              await logsService.logAIResponse(userEmail, cleanQuestion, fallbackResult.provider);
+              await logsService.logAIResponse(cleanUserId, cleanQuestion, fallbackResult.provider);
             }
             
             return res.json({
@@ -1285,7 +1285,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
       
       // Log da necessidade de esclarecimento
       if (logsService.isConfigured()) {
-        await logsService.logAIUsage(userEmail, cleanQuestion, 'Clarificação Tradicional');
+        await logsService.logAIUsage(cleanUserId, cleanQuestion, 'Clarificação Tradicional');
       }
 
       return res.json({
@@ -1345,7 +1345,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
           context,
           sessionHistory,
           cleanUserId,
-          userEmail,
+          cleanUserId,
           null, // searchResults
           'conversational', // formatType
           primaryAI
@@ -1359,7 +1359,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         
         // Log do uso da IA
         if (logsService.isConfigured() && aiResult.success) {
-          await logsService.logAIResponse(userEmail, cleanQuestion, aiProvider);
+          await logsService.logAIResponse(cleanUserId, cleanQuestion, aiProvider);
         }
         
       } catch (aiError) {
@@ -1370,7 +1370,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         
         // Log do erro
         if (logsService.isConfigured()) {
-          await logsService.logNotFoundQuestion(userEmail, cleanQuestion);
+          await logsService.logNotFoundQuestion(cleanUserId, cleanQuestion);
         }
       }
     } else {
@@ -1382,7 +1382,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         
         // Log da resposta do banco de dados
         if (logsService.isConfigured()) {
-          await logsService.logMongoDBResponse(userEmail, cleanQuestion, searchResults.botPergunta._id);
+          await logsService.logMongoDBResponse(cleanUserId, cleanQuestion, searchResults.botPergunta._id);
         }
       } else {
         response = 'Não consegui encontrar uma resposta precisa para sua pergunta. Pode fornecer mais detalhes ou reformular sua pergunta para que eu possa ajudá-lo melhor?';
@@ -1391,7 +1391,7 @@ app.post('/api/chatbot/ask', async (req, res) => {
         
         // Log da pergunta não encontrada
         if (logsService.isConfigured()) {
-          await logsService.logNotFoundQuestion(userEmail, cleanQuestion);
+          await logsService.logNotFoundQuestion(cleanUserId, cleanQuestion);
         }
       }
     }
