@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v2.17.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.17.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -1509,12 +1509,12 @@ app.post('/api/chatbot/ask', async (req, res) => {
         }
       } catch (error) {
         console.warn('⚠️ PONTO 3: Erro na análise da IA, continuando sem análise:', error.message);
-        aiAnalysis = { relevantOptions: [], needsClarification: false };
+        aiAnalysis = { relevantOptions: [], needsClarification: false, hasData: false };
       }
     } else {
-      // Nenhuma opção disponível
-      console.log('❌ PONTO 3: Nenhuma opção disponível para análise');
-      aiAnalysis = { relevantOptions: [], needsClarification: false };
+      // Nenhuma opção disponível - continuar para fallback da IA
+      console.log('⚠️ PONTO 3: Nenhuma opção do Bot_perguntas disponível - continuando para fallback da IA');
+      aiAnalysis = { relevantOptions: [], needsClarification: false, hasData: false };
     }
     
     // CENÁRIO 2: Se precisa de esclarecimento, retornar menu
@@ -1539,8 +1539,8 @@ app.post('/api/chatbot/ask', async (req, res) => {
       return res.json(responseData);
     }
     
-    // CENÁRIO 3: Se IA não considera nenhuma resposta aplicável
-    if (aiAnalysis && aiAnalysis.relevantOptions.length === 0) {
+    // CENÁRIO 3: Se IA não considera nenhuma resposta aplicável (apenas quando há dados do Bot_perguntas)
+    if (aiAnalysis && aiAnalysis.relevantOptions.length === 0 && aiAnalysis.hasData !== false) {
       console.log('❌ PONTO 3: Informando usuário que nenhuma resposta se aplica');
       
       const responseData = {

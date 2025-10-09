@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.7.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.7.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -545,8 +545,17 @@ const Chatbot = ({ prompt }) => {
                 let responseText = '';
                 let responseData = null;
                 
-                if (data.data && data.data.status === 'clarification_needed') {
-                    // Resposta de esclarecimento
+                if (data.source === 'clarification' && data.clarificationMenu) {
+                    // Resposta de esclarecimento (nova estrutura)
+                    responseText = data.response || 'Precisa de esclarecimento';
+                    responseData = {
+                        status: 'clarification_needed',
+                        resposta: data.response,
+                        options: data.clarificationMenu.options,
+                        question: data.clarificationMenu.question
+                    };
+                } else if (data.data && data.data.status === 'clarification_needed') {
+                    // Resposta de esclarecimento (estrutura antiga)
                     responseText = data.data.resposta || 'Precisa de esclarecimento';
                     responseData = data.data;
                 } else if (data.response) {
@@ -584,7 +593,12 @@ const Chatbot = ({ prompt }) => {
                     hasArticle: data.articles && data.articles.length > 0,
                     articleId: data.articles && data.articles.length > 0 ? data.articles[0].id : null,
                     // Dados específicos para esclarecimento
-                    clarificationData: data.data && data.data.status === 'clarification_needed' ? data.data : null
+                    clarificationData: (data.data && data.data.status === 'clarification_needed') ? data.data : 
+                                     (data.source === 'clarification' && data.clarificationMenu) ? {
+                                         status: 'clarification_needed',
+                                         options: data.clarificationMenu.options,
+                                         question: data.clarificationMenu.question
+                                     } : null
                 };
 
                 let finalMessages = [...newMessages, botMessage];

@@ -1,6 +1,6 @@
 // AI Service - Integração híbrida com IA para respostas inteligentes
 // VERSION: v2.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
-// VERSION: v2.6.1 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.6.3 | DATE: 2025-01-10 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // VERSION: v2.7.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // VERSION: v2.7.1 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // OTIMIZAÇÃO: Handshake inteligente com ping HTTP + TTL 3min + testes paralelos
@@ -300,9 +300,14 @@ Dados relevantes:
 ${relevantKeywords}${context}
 
 ## TAREFA
-Identifique APENAS matches diretos e óbvios com a pergunta do usuário.
-Se não houver match claro, responda: NENHUM
-Retorne APENAS os números das opções com match direto, separados por vírgula
+Analise a pergunta do usuário e identifique qual(is) opção(ões) se aplica(m):
+
+**CRITÉRIOS:**
+- Se houver APENAS 1 opção que responde EXATAMENTE a pergunta: retorne apenas esse número
+- Se houver MÚLTIPLAS opções que podem responder a pergunta: retorne todos os números separados por vírgula
+- Se NENHUMA opção se aplica claramente: responda NENHUM
+
+**IMPORTANTE:** Seja rigoroso. Só retorne múltiplas opções se realmente houver ambiguidade na pergunta.
 
 ## RESPOSTA:`;
   }
@@ -340,14 +345,14 @@ Retorne APENAS os números das opções com match direto, separados por vírgula
       // Verificar se a IA retornou "NENHUM" (sem matches)
       if (response.toUpperCase().includes('NENHUM') || response.trim() === '') {
         console.log('❌ AI Analyzer: IA retornou NENHUM - nenhuma opção relevante identificada');
-        return { relevantOptions: [], needsClarification: false };
+        return { relevantOptions: [], needsClarification: false, hasData: true };
       }
 
       // Extrair números da resposta
       const relevantIndices = response.match(/\d+/g);
       if (!relevantIndices || relevantIndices.length === 0) {
         console.log('❌ AI Analyzer: Nenhuma opção relevante identificada');
-        return { relevantOptions: [], needsClarification: false };
+        return { relevantOptions: [], needsClarification: false, hasData: true };
       }
 
       // Converter para índices reais (subtrair 1)
@@ -360,7 +365,8 @@ Retorne APENAS os números das opções com match direto, separados por vírgula
         return {
           relevantOptions: [filteredData[indices[0]]],
           needsClarification: false,
-          bestMatch: filteredData[indices[0]]
+          bestMatch: filteredData[indices[0]],
+          hasData: true
         };
       }
       
@@ -370,12 +376,13 @@ Retorne APENAS os números das opções com match direto, separados por vírgula
       return {
         relevantOptions: relevantOptions,
         needsClarification: true,
-        bestMatch: null
+        bestMatch: null,
+        hasData: true
       };
 
     } catch (error) {
       console.error('❌ AI Analyzer Error:', error.message);
-      return { relevantOptions: [], needsClarification: false, error: error.message };
+      return { relevantOptions: [], needsClarification: false, error: error.message, hasData: true };
     }
   }
 
