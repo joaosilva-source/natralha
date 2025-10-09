@@ -1,6 +1,6 @@
 // AI Service - Integração híbrida com IA para respostas inteligentes
 // VERSION: v2.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
-// VERSION: v2.6.5 | DATE: 2025-01-10 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v2.6.8 | DATE: 2025-01-10 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // VERSION: v2.7.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // VERSION: v2.7.1 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
 // OTIMIZAÇÃO: Handshake inteligente com ping HTTP + TTL 3min + testes paralelos
@@ -317,27 +317,103 @@ Analise a pergunta do usuário e identifique qual(is) opção(ões) se aplica(m)
    * @param {string} question - Pergunta do usuário
    * @param {Array} filteredData - Dados já filtrados por keywords
    * @param {Array} sessionHistory - Histórico da sessão
+   * @param {string} primaryAI - IA primária definida pelo handshake
    * @returns {Promise<Object>} Análise da IA com opções relevantes
    */
-  async analyzeQuestionWithAI(question, filteredData, sessionHistory = []) {
+  async analyzeQuestionWithAI(question, filteredData, sessionHistory = [], primaryAI = 'OpenAI') {
     try {
       console.log(`🤖 AI Analyzer: Analisando pergunta: "${question}"`);
       console.log(`🔍 AI Analyzer: ${filteredData.length} perguntas relevantes para análise`);
       
-      if (!this.isGeminiConfigured()) {
-        throw new Error('IA não configurada para análise');
-      }
-
       // Criar prompt otimizado
       const analysisPrompt = this.createOptimizedPrompt(question, filteredData, sessionHistory);
       
       console.log(`📝 AI Analyzer: Tamanho do prompt: ${analysisPrompt.length} caracteres`);
 
-      const gemini = this._initializeGemini();
-      const model = gemini.getGenerativeModel({ model: this.geminiModel });
-      
-      const result = await model.generateContent(analysisPrompt);
-      const response = result.response.text().trim();
+      let response = '';
+      let aiProvider = '';
+
+      console.log(`🤖 AI Analyzer: Usando IA primária do handshake: ${primaryAI}`);
+
+      // 1. TENTAR IA PRIMÁRIA (definida pelo handshake)
+      if (primaryAI === 'OpenAI' && this.isOpenAIConfigured()) {
+        try {
+          console.log('🤖 AI Analyzer: Tentando OpenAI (primária)...');
+          const openai = this._initializeOpenAI();
+          
+          const completion = await openai.chat.completions.create({
+            model: this.openaiModel,
+            messages: [{ role: 'user', content: analysisPrompt }],
+            max_tokens: 100,
+            temperature: 0.1
+          });
+          
+          response = completion.choices[0].message.content.trim();
+          aiProvider = 'OpenAI';
+          console.log('✅ AI Analyzer: OpenAI respondeu com sucesso');
+        } catch (openaiError) {
+          console.error('❌ AI Analyzer: OpenAI falhou:', openaiError.message);
+        }
+      } else if (primaryAI === 'Gemini' && this.isGeminiConfigured()) {
+        try {
+          console.log('🤖 AI Analyzer: Tentando Gemini (primária)...');
+          const gemini = this._initializeGemini();
+          const model = gemini.getGenerativeModel({ model: this.geminiModel });
+          
+          const result = await model.generateContent(analysisPrompt);
+          response = result.response.text().trim();
+          aiProvider = 'Gemini';
+          console.log('✅ AI Analyzer: Gemini respondeu com sucesso');
+        } catch (geminiError) {
+          console.error('❌ AI Analyzer: Gemini falhou:', geminiError.message);
+        }
+      }
+
+      // 2. FALLBACK PARA IA SECUNDÁRIA
+      if (!response && primaryAI === 'OpenAI' && this.isGeminiConfigured()) {
+        try {
+          console.log('🤖 AI Analyzer: Tentando Gemini como fallback...');
+          const gemini = this._initializeGemini();
+          const model = gemini.getGenerativeModel({ model: this.geminiModel });
+          
+          const result = await model.generateContent(analysisPrompt);
+          response = result.response.text().trim();
+          aiProvider = 'Gemini';
+          console.log('✅ AI Analyzer: Gemini respondeu com sucesso (fallback)');
+        } catch (geminiError) {
+          console.error('❌ AI Analyzer: Gemini também falhou:', geminiError.message);
+        }
+      } else if (!response && primaryAI === 'Gemini' && this.isOpenAIConfigured()) {
+        try {
+          console.log('🤖 AI Analyzer: Tentando OpenAI como fallback...');
+          const openai = this._initializeOpenAI();
+          
+          const completion = await openai.chat.completions.create({
+            model: this.openaiModel,
+            messages: [{ role: 'user', content: analysisPrompt }],
+            max_tokens: 100,
+            temperature: 0.1
+          });
+          
+          response = completion.choices[0].message.content.trim();
+          aiProvider = 'OpenAI';
+          console.log('✅ AI Analyzer: OpenAI respondeu com sucesso (fallback)');
+        } catch (openaiError) {
+          console.error('❌ AI Analyzer: OpenAI também falhou:', openaiError.message);
+        }
+      }
+
+      // 3. SE AMBOS FALHARAM - USAR PESQUISA SIMPLES POR FILTRO NO MONGO COMO FALLBACK
+      if (!response) {
+        console.log('❌ AI Analyzer: Ambas IAs falharam - usando pesquisa simples por filtro no MongoDB como fallback');
+        // Retornar todas as opções filtradas para pesquisa simples
+        return { 
+          relevantOptions: filteredData, 
+          needsClarification: filteredData.length > 1, 
+          hasData: true,
+          fallback: 'mongo_filter'
+        };
+      }
       
       console.log(`🤖 AI Analyzer: Resposta da IA: "${response}"`);
       console.log(`🔍 AI Analyzer: Tamanho da resposta: ${response.length} caracteres`);

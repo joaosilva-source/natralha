@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v2.17.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.17.2 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -1492,7 +1492,18 @@ app.post('/api/chatbot/ask', async (req, res) => {
     // SEMPRE usar IA para analisar as opções disponíveis
     if (botPerguntasData.length > 0) {
       try {
-        aiAnalysis = await aiService.analyzeQuestionWithAI(cleanQuestion, botPerguntasData, sessionHistory);
+        // Usar IA primária definida no handshake do Ponto 0 (TTL 3min)
+        const aiStatus = aiService.statusCache.data;
+        let primaryAI = 'OpenAI'; // Fallback padrão
+        
+        if (aiStatus && aiStatus.openai && aiStatus.openai.available) {
+          primaryAI = 'OpenAI';
+        } else if (aiStatus && aiStatus.gemini && aiStatus.gemini.available) {
+          primaryAI = 'Gemini';
+        }
+        
+        console.log(`🤖 PONTO 3: Usando IA primária do handshake: ${primaryAI}`);
+        aiAnalysis = await aiService.analyzeQuestionWithAI(cleanQuestion, botPerguntasData, sessionHistory, primaryAI);
         console.log(`✅ PONTO 3: IA analisou ${botPerguntasData.length} opções`);
         
         if (aiAnalysis.needsClarification && aiAnalysis.relevantOptions.length > 1) {
