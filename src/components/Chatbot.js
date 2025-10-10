@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.7.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.8.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -30,7 +30,8 @@ const Chatbot = ({ prompt }) => {
         'credito-pessoal': 'on', 
         'antecipacao': 'off',
         'pagamento-antecipado': 'on',
-        'modulo-irpf': 'off'
+        'modulo-irpf': 'off',
+        'seguro': 'on'
     });
 
     // Função para buscar status dos módulos do Console VeloHub
@@ -94,7 +95,8 @@ const Chatbot = ({ prompt }) => {
                 'credito-pessoal': 'on',
                 'antecipacao': 'off',
                 'pagamento-antecipado': 'on',
-                'modulo-irpf': 'off'
+                'modulo-irpf': 'off',
+                'seguro': 'on'
             };
             setModuleStatus(fallbackStatus);
         }
@@ -741,22 +743,15 @@ const Chatbot = ({ prompt }) => {
                 })
             });
 
-            // Navegar para a aba Artigos e abrir o modal
-            // Disparar evento customizado para mudar de aba
-            const event = new CustomEvent('navigateToArticles', {
-                detail: { articleId: article.id }
-            });
-            window.dispatchEvent(event);
-            
-            console.log('📖 Chatbot: Navegando para aba Artigos com artigo:', article.title);
+            // Abrir o modal diretamente no Chatbot
+            console.log('📖 Chatbot: Abrindo modal do artigo:', article.title);
+            setSelectedArticle(article);
 
         } catch (error) {
             console.error('❌ Chatbot: Erro ao logar visualização de artigo:', error);
-            // Mesmo com erro no log, navegar para a aba
-            const event = new CustomEvent('navigateToArticles', {
-                detail: { articleId: article.id }
-            });
-            window.dispatchEvent(event);
+            // Mesmo com erro no log, abrir o modal
+            console.log('📖 Chatbot: Abrindo modal do artigo (fallback):', article.title);
+            setSelectedArticle(article);
         }
     };
 
@@ -805,8 +800,8 @@ const Chatbot = ({ prompt }) => {
                 {/* Módulo IRPF */}
                 {renderModuleStatus('modulo-irpf', 'Módulo IRPF')}
                 
-                {/* Espaço reservado para 6º módulo */}
-                <div></div>
+                {/* Seguro */}
+                {renderModuleStatus('seguro', 'Seguro')}
             </div>
                 </div>
 

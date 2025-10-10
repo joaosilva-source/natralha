@@ -1,5 +1,5 @@
 listagem de schema de coleções do mongoDB
-<!-- VERSION: v1.5.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team -->
+<!-- VERSION: v1.6.0 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team -->
 
   🗄️ Database Principal: console_conteudo
 
@@ -136,6 +136,7 @@ _pessoal: String,        // Status do Crédito Pessoal
 _antecipacao: String,    // Status da Antecipação
 _pgtoAntecip: String,    // Status do Pagamento Antecipado
 _irpf: String,           // Status do Módulo IRPF
+_seguro: String,         // Status do Módulo Seguro
 createdAt: Date,         // Data de criação
 updatedAt: Date          // Data de atualização
 }

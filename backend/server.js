@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Backend Server
- * VERSION: v2.17.2 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
+ * VERSION: v2.18.0 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 // LOG DE DIAGNÓSTICO #1: Identificar a versão do código
@@ -1985,7 +1985,8 @@ let moduleStatusCache = {
   'credito-pessoal': 'on',
   'antecipacao': 'off',
   'pagamento-antecipado': 'on',
-  'modulo-irpf': 'off'
+  'modulo-irpf': 'off',
+  'seguro': 'on'
 };
 
 // Timestamp do último cache para controle de validade
@@ -2031,7 +2032,8 @@ const fetchModuleStatusFromMongoDB = async () => {
       'credito-pessoal': latestStatus._pessoal || 'on',
       'antecipacao': latestStatus._antecipacao || 'revisao',
       'pagamento-antecipado': latestStatus._pgtoAntecip || 'off',
-      'modulo-irpf': latestStatus._irpf || 'on'
+      'modulo-irpf': latestStatus._irpf || 'on',
+      'seguro': latestStatus._seguro || 'on'
     };
 
     console.log('📊 Status dos módulos mapeado do MongoDB:', mappedStatus);
@@ -2040,7 +2042,8 @@ const fetchModuleStatusFromMongoDB = async () => {
       _pessoal: latestStatus._pessoal,
       _antecipacao: latestStatus._antecipacao,
       _pgtoAntecip: latestStatus._pgtoAntecip,
-      _irpf: latestStatus._irpf
+      _irpf: latestStatus._irpf,
+      _seguro: latestStatus._seguro
     });
     
     console.log('✅ fetchModuleStatusFromMongoDB: Busca concluída com sucesso');
@@ -2100,7 +2103,8 @@ app.get('/api/module-status', async (req, res) => {
       'credito-pessoal': currentStatus['credito-pessoal'] || 'on',
       'antecipacao': currentStatus['antecipacao'] || 'revisao',
       'pagamento-antecipado': currentStatus['pagamento-antecipado'] || 'off',
-      'modulo-irpf': currentStatus['modulo-irpf'] || 'on'
+      'modulo-irpf': currentStatus['modulo-irpf'] || 'on',
+      'seguro': currentStatus['seguro'] || 'on'
     };
     
     console.log('📊 Retornando status dos módulos:', validStatus);
@@ -2120,7 +2124,8 @@ app.get('/api/module-status', async (req, res) => {
       'credito-pessoal': 'on',
       'antecipacao': 'off',
       'pagamento-antecipado': 'on',
-      'modulo-irpf': 'off'
+      'modulo-irpf': 'off',
+      'seguro': 'on'
     };
     
     console.log('🔄 Usando status fallback:', fallbackStatus);
@@ -2156,7 +2161,8 @@ app.post('/api/module-status', async (req, res) => {
       'credito-pessoal': '_pessoal',
       'antecipacao': '_antecipacao',
       'pagamento-antecipado': '_pgtoAntecip',
-      'modulo-irpf': '_irpf'
+      'modulo-irpf': '_irpf',
+      'seguro': '_seguro'
     };
     
     const mongoField = mongoFieldMap[moduleKey];
@@ -2185,6 +2191,7 @@ app.post('/api/module-status', async (req, res) => {
           _antecipacao: updateData['antecipacao'],
           _pgtoAntecip: updateData['pagamento-antecipado'],
           _irpf: updateData['modulo-irpf'],
+          _seguro: updateData['seguro'],
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -2261,6 +2268,7 @@ app.put('/api/module-status', async (req, res) => {
           _antecipacao: updatedStatus['antecipacao'],
           _pgtoAntecip: updatedStatus['pagamento-antecipado'],
           _irpf: updatedStatus['modulo-irpf'],
+          _seguro: updatedStatus['seguro'],
           createdAt: new Date(),
           updatedAt: new Date()
         };
