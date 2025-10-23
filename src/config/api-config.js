@@ -15,7 +15,7 @@ export const getApiBaseUrl = () => {
   
   // Se estamos em desenvolvimento, usar localhost
   if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:5000/api';
+    return 'http://localhost:8080/api';
   }
   
   // Em produção, detectar automaticamente a URL baseada no domínio atual

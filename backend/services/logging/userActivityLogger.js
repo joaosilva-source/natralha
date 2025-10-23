@@ -1,5 +1,5 @@
 // User Activity Logger - Log de atividades dos usuários
-// VERSION: v1.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+// VERSION: v1.2.0 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
@@ -81,42 +81,7 @@ class UserActivityLogger {
     });
   }
 
-  /**
-   * Registra feedback do usuário
-   * @param {string} colaboradorNome - Nome do colaborador
-   * @param {string} feedbackType - Tipo do feedback
-   * @param {string} messageId - ID da mensagem
-   * @param {string} sessionId - ID da sessão
-   * @param {Object} metadata - Metadados adicionais
-   * @returns {Promise<boolean>} Sucesso da operação
-   */
-  async logFeedback(colaboradorNome, feedbackType, messageId, sessionId = null, metadata = {}) {
-    return await this.logActivity({
-      colaboradorNome,
-      action: 'feedback_given',
-      details: { feedbackType, messageId },
-      sessionId,
-      source: 'chatbot'
-    });
-  }
 
-  /**
-   * Registra visualização de artigo
-   * @param {string} colaboradorNome - Nome do colaborador
-   * @param {string} articleId - ID do artigo
-   * @param {string} articleTitle - Título do artigo
-   * @param {string} sessionId - ID da sessão
-   * @returns {Promise<boolean>} Sucesso da operação
-   */
-  async logArticleView(colaboradorNome, articleId, articleTitle, sessionId = null) {
-    return await this.logActivity({
-      colaboradorNome,
-      action: 'article_viewed',
-      details: { articleId, articleTitle },
-      sessionId,
-      source: 'chatbot'
-    });
-  }
 
   /**
    * Registra uso do botão AI

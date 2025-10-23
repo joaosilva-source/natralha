@@ -1,6 +1,6 @@
 /**
  * VeloHub V3 - Chatbot Component
- * VERSION: v1.8.1 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.9.0 | DATE: 2025-01-10 | AUTHOR: VeloHub Development Team
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -588,6 +588,7 @@ const Chatbot = ({ prompt }) => {
                     feedbackState: 'pending',
                     source: data.source || (data.data ? data.data.source : 'unknown'),
                     timestamp: data.timestamp || (data.data ? data.data.timestamp : new Date().toISOString()),
+                    tabulacao: data.tabulacao || null,
                     // Dados para o botão IA
                     originalQuestion: trimmedInput,
                     botPerguntaResponse: formattedResponseText,
@@ -618,28 +619,6 @@ const Chatbot = ({ prompt }) => {
 
                 setMessages(finalMessages);
 
-                // Log da atividade (opcional - pode ser feito no backend)
-                try {
-                    await fetch(`${API_BASE_URL}/chatbot/activity`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            action: 'question_answered',
-                            details: {
-                                question: trimmedInput,
-                                responseLength: data.response ? data.response.length : 0,
-                                source: data.source,
-                                hasArticles: data.articles && data.articles.length > 0
-                            },
-                            userId: userId,
-                            sessionId: sessionId
-                        })
-                    });
-                } catch (activityError) {
-                    console.warn('⚠️ Chatbot: Erro ao logar atividade:', activityError);
-                }
 
             } else {
                 // Tratar resposta de erro
@@ -725,31 +704,13 @@ const Chatbot = ({ prompt }) => {
         try {
             console.log('📖 Chatbot: Artigo clicado:', article.title);
 
-            // Log da atividade
-            await fetch(`${API_BASE_URL}/chatbot/activity`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'article_viewed',
-                    details: {
-                        articleId: article.id,
-                        articleTitle: article.title,
-                        fromChatbot: true
-                    },
-                    userId: userId,
-                    sessionId: sessionId
-                })
-            });
-
             // Abrir o modal diretamente no Chatbot
             console.log('📖 Chatbot: Abrindo modal do artigo:', article.title);
             setSelectedArticle(article);
 
         } catch (error) {
-            console.error('❌ Chatbot: Erro ao logar visualização de artigo:', error);
-            // Mesmo com erro no log, abrir o modal
+            console.error('❌ Chatbot: Erro ao abrir modal do artigo:', error);
+            // Mesmo com erro, tentar abrir o modal
             console.log('📖 Chatbot: Abrindo modal do artigo (fallback):', article.title);
             setSelectedArticle(article);
         }
@@ -849,7 +810,68 @@ const Chatbot = ({ prompt }) => {
                                         {backgroundColor: 'var(--blue-medium)', color: 'var(--white)'} : 
                                         {backgroundColor: 'var(--cor-container)', color: 'var(--cor-texto-principal)', border: '1px solid var(--cor-borda)'}
                                      }>
+                                    {/* Texto principal */}
                                     <p>{msg.text}</p>
+                                    
+                                    {/* Ícones de feedback e IA em linha separada */}
+                                    <div className="flex justify-between items-center mt-2">
+                                        <div className="flex gap-2">
+                                            {msg.feedbackState === 'pending' && (
+                                                <>
+                                                    <button onClick={() => handleFeedback(msg.id, 'positive')} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsUp size={16}/></button>
+                                                    <button onClick={() => openFeedbackModal(msg)} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--yellow)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsDown size={16}/></button>
+                                                    <button 
+                                                        onClick={() => handleCopyText(msg.text)} 
+                                                        className="p-1 transition-colors" 
+                                                        style={{color: 'var(--cor-texto-secundario)'}} 
+                                                        onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} 
+                                                        onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}
+                                                        title="Copiar texto"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Botões IA - WhatsApp e E-mail */}
+                                        {msg.sender === 'bot' && msg.originalQuestion && (
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'whatsapp')}
+                                                    title="Formatação para WhatsApp"
+                                                >
+                                                    <img 
+                                                        src="/wpp logo.png" 
+                                                        alt="WhatsApp" 
+                                                        style={{ width: '20px', height: '20px' }}
+                                                    />
+                                                </button>
+                                                
+                                                <button 
+                                                    onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'email')}
+                                                    title="Formatação para E-mail formal"
+                                                >
+                                                    <img 
+                                                        src="/octa logo.png" 
+                                                        alt="E-mail" 
+                                                        style={{ width: '20px', height: '20px' }}
+                                                    />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Linha divisória e Tabulação */}
+                                    {msg.sender === 'bot' && msg.tabulacao && (
+                                        <>
+                                            <div className="border-t mt-2 pt-2" style={{borderColor: 'var(--cor-borda)'}}>
+                                                <p style={{color: 'var(--cor-texto-principal)'}}>
+                                                    {msg.tabulacao}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
                                     
                                     {/* Opções de esclarecimento */}
                                     {msg.clarificationData && msg.clarificationData.options && (
@@ -867,53 +889,6 @@ const Chatbot = ({ prompt }) => {
                                                     </button>
                                                 ))}
                                             </div>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Botões IA - WhatsApp e E-mail */}
-                                    {msg.sender === 'bot' && msg.originalQuestion && (
-                                        <div className="flex justify-end gap-2 mt-2">
-                                            {/* Botão WhatsApp */}
-                                            <button 
-                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'whatsapp')}
-                                                title="Formatação para WhatsApp"
-                                            >
-                                                <img 
-                                                    src="/wpp logo.png" 
-                                                    alt="WhatsApp" 
-                                                    style={{ width: '20px', height: '20px' }}
-                                                />
-                                            </button>
-                                            
-                                            {/* Botão E-mail */}
-                                            <button 
-                                                onClick={() => handleAIButton(msg.originalQuestion, msg.botPerguntaResponse, msg.articleContent, 'email')}
-                                                title="Formatação para E-mail formal"
-                                            >
-                                                <img 
-                                                    src="/octa logo.png" 
-                                                    alt="E-mail" 
-                                                    style={{ width: '20px', height: '20px' }}
-                                                />
-                                            </button>
-                                        </div>
-                                    )}
-                                    
-                                    {msg.feedbackState === 'pending' && (
-                                        <div className="flex gap-2 mt-2">
-                                            <button onClick={() => handleFeedback(msg.id, 'positive')} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsUp size={16}/></button>
-                                            <button onClick={() => openFeedbackModal(msg)} className="p-1 transition-colors" style={{color: 'var(--cor-texto-secundario)'}} onMouseEnter={(e) => e.target.style.color = 'var(--yellow)'} onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}><ThumbsDown size={16}/></button>
-                                            {/* Botão Copiar */}
-                                            <button 
-                                                onClick={() => handleCopyText(msg.text)} 
-                                                className="p-1 transition-colors" 
-                                                style={{color: 'var(--cor-texto-secundario)'}} 
-                                                onMouseEnter={(e) => e.target.style.color = 'var(--blue-medium)'} 
-                                                onMouseLeave={(e) => e.target.style.color = 'var(--cor-texto-secundario)'}
-                                                title="Copiar texto"
-                                            >
-                                                📋
-                                            </button>
                                         </div>
                                     )}
                                     {msg.feedbackState === 'given' && (

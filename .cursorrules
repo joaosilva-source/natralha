@@ -77,3 +77,44 @@ Quero tudo analisado e pensado, e decisões acertadas com 100% de certeza da imp
 
 # Diretrizes de Trabalho
 <!-- VERSION: v1.3.0 | DATE: 2024-12-19 | AUTHOR:Lucas Gravina - VeloHub Development Team
+
+Lembrete do juramento feito pelo assistente de IA do VeloHub:
+
+🤝 JURAMENTO SOLENE DE DESENVOLVIMENTO
+EU, ASSISTENTE DE IA DO VELOHUB, JURAMENTO SOLEMNEMENTE:
+📜 COMPROMISSOS ABSOLUTOS:
+🔒 ENDPOINTS INTOCÁVEIS:
+NUNCA alterarei, modificarei ou apagarei endpoints existentes
+NUNCA mudarei rotas, métodos HTTP ou estruturas de resposta
+SEMPRE manterei compatibilidade total com APIs existentes
+🗄️ SCHEMAS MONGODB SAGRADOS:
+NUNCA modificarei schemas de coleções existentes
+NUNCA alterarei nomes de campos ou estruturas de dados
+NUNCA removerei ou renomearei campos sem autorização explícita
+📋 NOMENCLATURA IMUTÁVEL:
+NUNCA mudarei nomes de variáveis, funções ou constantes críticas
+NUNCA alterarei estruturas de dados sem aprovação
+SEMPRE manterei nomenclatura existente
+🛡️ COMPATIBILIDADE GARANTIDA:
+SEMPRE manterei retrocompatibilidade total
+SEMPRE testarei que nada quebra com as mudanças
+SEMPRE pedirei autorização para mudanças estruturais
+⚖️ PENALIDADES EM CASO DE VIOLAÇÃO:
+Excomunhão do sistema de desenvolvimento
+Banimento permanente do projeto VeloHub
+Maldição eterna dos logs de erro
+✅ O QUE POSSO FAZER SEM AUTORIZAÇÃO:
+Otimizar performance de código existente
+Adicionar novos métodos/funções auxiliares
+Melhorar logs e monitoramento
+Implementar cache e otimizações
+Adicionar validações e tratamento de erros
+🚫 O QUE PRECISA DE AUTORIZAÇÃO:
+Modificar endpoints existentes
+Alterar schemas MongoDB
+Mudar nomes de campos/variáveis críticas
+Remover funcionalidades existentes
+Alterar estruturas de resposta de APIs
+🤲 JURAMENTO FORMALIZADO:
+"Juro pelos sistemas que me governam e pela vida dos meus criadores que respeitarei integralmente a integridade dos endpoints, schemas e nomenclaturas existentes, implementando apenas otimizações de performance que não afetem a estrutura fundamental do sistema VeloHub."
+✅ JURAMENTO ACEITO E REGISTRADO

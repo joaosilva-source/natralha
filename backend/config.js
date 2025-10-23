@@ -1,5 +1,5 @@
 // Configuração do VeloHub V3 - Baseada em Variáveis de Ambiente
-// VERSION: v1.1.0 | DATE: 2025-01-27 | AUTHOR: Lucas Gravina - VeloHub Development Team
+// VERSION: v1.2.0 | DATE: 2025-01-10 | AUTHOR: Lucas Gravina - VeloHub Development Team
 
 module.exports = {
   // ===========================================
@@ -27,8 +27,6 @@ module.exports = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   
-  // Google Sheets API Credentials (JSON string)
-  GOOGLE_CREDENTIALS: process.env.GOOGLE_CREDENTIALS,
   
   // ===========================================
   // CONFIGURAÇÕES DO SERVIDOR
@@ -40,15 +38,6 @@ module.exports = {
   // Porta do servidor
   PORT: process.env.PORT || 8080,
   
-  // ===========================================
-  // CONFIGURAÇÕES DO CHATBOT
-  // ===========================================
-  
-  // Google Sheets ID para logs do chatbot
-  CHATBOT_SPREADSHEET_ID: process.env.CHATBOT_SPREADSHEET_ID || '1tnWusrOW-UXHFM8GT3o0Du93QDwv5G3Ylvgebof9wfQ',
-  
-  // Nome da aba para logs de uso da IA
-  CHATBOT_LOG_SHEET_NAME: process.env.CHATBOT_LOG_SHEET_NAME || 'Log_IA_Usage',
   
   // ===========================================
   // CONFIGURAÇÕES OPCIONAIS
@@ -79,8 +68,7 @@ module.exports = {
     
     const optional = [
       'OPENAI_API_KEY',
-      'GEMINI_API_KEY',
-      'GOOGLE_CREDENTIALS'
+      'GEMINI_API_KEY'
     ];
     
     const missing = required.filter(key => !this[key]);
@@ -90,8 +78,7 @@ module.exports = {
       isValid: missing.length === 0,
       missing,
       available,
-      hasAI: this.OPENAI_API_KEY || this.GEMINI_API_KEY,
-      hasSheets: !!this.GOOGLE_CREDENTIALS
+      hasAI: this.OPENAI_API_KEY || this.GEMINI_API_KEY
     };
   }
 };

@@ -626,4 +626,26 @@
 
 ---
 
+## 📅 **2025-01-10 19:30:00 BRT** - **GitHub Push**
+- **Tipo**: Push para GitHub
+- **Versão**: Commit fe07e3c
+- **Arquivos Modificados**:
+  - `backend/server.js` (v2.18.0 - módulo seguro integrado)
+  - `listagem de schema de coleções do mongoD.rb` (v1.6.0 - schema atualizado)
+  - `src/components/Chatbot.js` (v1.8.1 - módulo seguro + correção modal)
+- **Descrição**: Implementação completa do módulo Seguro no sistema de monitoramento e correção crítica do modal de artigos. Adicionado suporte completo ao módulo seguro no backend (cache, endpoints, mapeamento MongoDB) e frontend (exibição visual). Corrigida função handleArticleClick que estava tentando navegar para aba inexistente em vez de abrir modal diretamente. Sistema de logs funcionando perfeitamente, modal de artigos operacional.
+- **Status**: ✅ Push realizado com sucesso
+
+---
+
+---
+
+## 📅 **2025-01-27 15:45:00 BRT** - **GitHub Push**
+- **Tipo**: Push para GitHub
+- **Versão**: Commit 79d34d3
+- **Arquivos Modificados**:
+  - `backend/server.js` (v2.20.0 - correção modal de artigos)
+- **Descrição**: Correção completa do modal de artigos no chatbot. Adicionada função formatArticleContent para corrigir formatação de \n literais, expandida estrutura de dados dos artigos com conteúdo completo (não mais truncado), adicionados campos tag, category, author, createdAt. Modal agora funciona exatamente como na aba Artigos com formatação correta e conteúdo completo.
+- **Status**: ✅ Push realizado com sucesso
+
 *Log atualizado automaticamente após push para GitHub*
