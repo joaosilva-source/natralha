@@ -1,6 +1,7 @@
 # Dockerfile para Google Cloud Run - VeloHub V3
 # Multi-stage build para React + Node.js
-# Updated: 2025-01-15 - Improved startup reliability
+# VERSION: v1.1.0 | DATE: 2025-01-30 | AUTHOR: VeloHub Development Team
+# Updated: 2025-01-30 - Variáveis de ambiente para build do frontend
 
 # Stage 1: Build do frontend React
 FROM node:18-alpine AS frontend-builder
@@ -15,6 +16,15 @@ COPY public/ ./public/
 COPY src/ ./src/
 COPY tailwind.config.js ./
 COPY postcss.config.js ./
+
+# Definir variáveis de ambiente para o build do frontend
+ARG REACT_APP_API_URL
+ARG REACT_APP_GOOGLE_CLIENT_ID
+ARG REACT_APP_AUTHORIZED_DOMAIN
+
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_GOOGLE_CLIENT_ID=$REACT_APP_GOOGLE_CLIENT_ID
+ENV REACT_APP_AUTHORIZED_DOMAIN=$REACT_APP_AUTHORIZED_DOMAIN
 
 # Build do frontend
 RUN npm run build

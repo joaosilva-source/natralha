@@ -1,6 +1,6 @@
 # cloudbuild.yaml - CI/CD para Google Cloud Build
-# VERSION: v1.1.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
-# Configuração para deploy automático do VeloHub V3
+# VERSION: v1.2.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
+# Configuração para deploy automático do VeloHub V3 - Variáveis de ambiente corrigidas
 
 steps:
   # Instalar dependências
@@ -27,7 +27,7 @@ steps:
       - '--build-arg'
       - 'REACT_APP_GOOGLE_CLIENT_ID=278491073220-eb4ogvn3aifu0ut9mq3rvu5r9r9l3137.apps.googleusercontent.com'
       - '--build-arg'
-      - 'REACT_APP_AUTHORIZED_DOMAIN=@velotax.com.br'
+      - 'REACT_APP_AUTHORIZED_DOMAIN=velotax.com.br'
       - '--build-arg'
       - 'REACT_APP_API_URL=https://velohub-278491073220.us-east1.run.app/api'
       - '.'
