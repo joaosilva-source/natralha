@@ -1,13 +1,19 @@
 /**
  * VeloHub V3 - Escalações API Routes - Solicitações Técnicas
- * VERSION: v1.3.0 | DATE: 2025-01-30 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.3.2 | DATE: 2025-01-31 | AUTHOR: VeloHub Development Team
  * Branch: main (recuperado de escalacoes)
  * 
  * Rotas para gerenciamento de solicitações técnicas
  * 
+ * Mudanças v1.3.2:
+ * - Corrigido mapeamento de status: ✅ → 'feito' e ❌ → 'não feito' (compatível com frontend)
+ * 
+ * Mudanças v1.3.1:
+ * - Adicionados logs detalhados para diagnóstico de envio WhatsApp
+ * 
  * Mudanças v1.3.0:
  * - Adicionado endpoint POST /auto-status para atualização automática via reações WhatsApp
- * - Suporte para reações ✅ (Resolvido) e ❌ (Negado)
+ * - Suporte para reações ✅ (feito) e ❌ (não feito)
  * 
  * Mudanças v1.2.0:
  * - Integração com WhatsApp service para envio automático de mensagens
@@ -204,6 +210,12 @@ const initSolicitacoesRoutes = (client, connectToMongo, services = {}) => {
       let waMessageIdFinal = waMessageId || null;
       let messageIdsArray = [];
       
+      // Log detalhado para diagnóstico
+      console.log(`[WHATSAPP DEBUG] Verificando condições de envio:`);
+      console.log(`  - WHATSAPP_API_URL: ${config.WHATSAPP_API_URL ? '✅ Configurado' : '❌ Não configurado'}`);
+      console.log(`  - WHATSAPP_DEFAULT_JID: ${config.WHATSAPP_DEFAULT_JID ? '✅ Configurado' : '❌ Não configurado'}`);
+      console.log(`  - mensagemTexto: ${mensagemTexto ? `✅ Presente (${mensagemTexto.length} chars)` : '❌ Ausente'}`);
+      
       if (config.WHATSAPP_API_URL && config.WHATSAPP_DEFAULT_JID && mensagemTexto) {
         try {
           // Extrair imagens do payload se existirem
@@ -265,10 +277,20 @@ const initSolicitacoesRoutes = (client, connectToMongo, services = {}) => {
           }
         } catch (whatsappError) {
           console.error('❌ Erro ao enviar via WhatsApp (não crítico):', whatsappError);
+          console.error('❌ Stack trace:', whatsappError.stack);
           // Não bloquear criação da solicitação se WhatsApp falhar
         }
       } else {
-        console.log('[WHATSAPP] WhatsApp não configurado ou mensagemTexto ausente - pulando envio');
+        console.log('[WHATSAPP] ⚠️ WhatsApp não configurado ou mensagemTexto ausente - pulando envio');
+        if (!config.WHATSAPP_API_URL) {
+          console.log('[WHATSAPP]   → Motivo: WHATSAPP_API_URL não configurado');
+        }
+        if (!config.WHATSAPP_DEFAULT_JID) {
+          console.log('[WHATSAPP]   → Motivo: WHATSAPP_DEFAULT_JID não configurado');
+        }
+        if (!mensagemTexto) {
+          console.log('[WHATSAPP]   → Motivo: mensagemTexto ausente');
+        }
       }
 
       // Atualizar agentContact se WhatsApp foi usado
@@ -491,13 +513,13 @@ const initSolicitacoesRoutes = (client, connectToMongo, services = {}) => {
         messageIds: solicitacao.payload?.messageIds
       });
 
-      // Mapear emoji para status
+      // Mapear emoji para status (usar nomenclatura esperada pelo frontend)
       let statusFinal = inputStatus;
       if (!statusFinal && reaction) {
         if (reaction === '✅') {
-          statusFinal = 'Resolvido';
+          statusFinal = 'feito';
         } else if (reaction === '❌') {
-          statusFinal = 'Negado';
+          statusFinal = 'não feito';
         }
       }
 
