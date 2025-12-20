@@ -52,6 +52,8 @@ const FormSolicitacao = ({ registrarLog }) => {
     saldoZerado: false,
     portabilidadePendente: false,
     dividaIrpfQuitada: false,
+    semDebitoAberto: false,
+    n2Ouvidora: false,
     observacoes: '',
   });
   const [loading, setLoading] = useState(false);
@@ -385,8 +387,12 @@ const FormSolicitacao = ({ registrarLog }) => {
       msg += `Dado novo: ${form.dadoNovo || '—'}\n`;
       msg += `Fotos verificadas: ${simNao(form.fotosVerificadas)}\n`;
       msg += `Observações: ${form.observacoes || '—'}\n`;
+    } else if (form.tipo === 'Exclusão de Chave PIX') {
+      msg += `Sem Débito em aberto: ${simNao(form.semDebitoAberto)}\n`;
+      msg += `N2 - Ouvidora: ${simNao(form.n2Ouvidora)}\n`;
+      msg += `Observações: ${form.observacoes || '—'}\n`;
     } else {
-      // Para outros tipos (Exclusão de Chave PIX, Reativação, etc.)
+      // Para outros tipos (Reativação de Conta, etc.)
       msg += `Observações: ${form.observacoes || '—'}\n`;
     }
     
@@ -411,6 +417,13 @@ const FormSolicitacao = ({ registrarLog }) => {
       showNotification('CPF inválido. Digite os 11 dígitos.', 'error');
       return;
     }
+    
+    // Validação: Exclusão de Chave PIX requer pelo menos um dos dois campos
+    if (form.tipo === 'Exclusão de Chave PIX' && !form.semDebitoAberto && !form.n2Ouvidora) {
+      showNotification('Para Exclusão de Chave PIX, é obrigatório selecionar pelo menos uma opção: "Sem Débito em aberto" ou "N2 - Ouvidora"', 'error');
+      return;
+    }
+    
     setLoading(true);
     if (registrarLog) registrarLog('Iniciando envio...');
 
@@ -745,6 +758,30 @@ const FormSolicitacao = ({ registrarLog }) => {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {form.tipo === 'Exclusão de Chave PIX' && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mt-2 border border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">* Selecione pelo menos uma opção:</p>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.semDebitoAberto}
+                onChange={(e) => atualizar('semDebitoAberto', e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-gray-700 dark:text-gray-300">Sem Débito em aberto</span>
+            </label>
+            <label className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                checked={form.n2Ouvidora}
+                onChange={(e) => atualizar('n2Ouvidora', e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-gray-700 dark:text-gray-300">N2 - Ouvidora</span>
+            </label>
           </div>
         )}
 

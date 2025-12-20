@@ -16,6 +16,8 @@ export default function FormSolicitacao({ registrarLog }) {
     saldoZerado: false,
     portabilidadePendente: false,
     dividaIrpfQuitada: false,
+    semDebitoAberto: false,
+    n2Ouvidora: false,
     observacoes: "",
   });
   const [loading, setLoading] = useState(false);
@@ -130,7 +132,8 @@ export default function FormSolicitacao({ registrarLog }) {
       "Reativação de Conta": "Reativação de Conta",
     };
     const tipoCanon = typeMap[form.tipo] || toTitleCase(String(form.tipo || ''));
-    const cpfNorm = String(form.cpf || '').replace(/\s+/g, ' ').trim();
+    // CPF sem pontos e traços para WhatsApp
+    const cpfNorm = String(form.cpf || '').replace(/\D/g, '');
     let msg = `*Nova Solicitação Técnica - ${tipoCanon}*\n\n`;
     msg += `Agente: ${form.agente}\nCPF: ${cpfNorm}\n\n`;
 
@@ -143,7 +146,11 @@ export default function FormSolicitacao({ registrarLog }) {
       msg += `Observações: ${form.observacoes || "—"}\n`;
     } else if (form.tipo === "Alteração de Dados Cadastrais") {
       msg += `Tipo de informação: ${form.infoTipo}\nDado antigo: ${form.dadoAntigo}\nDado novo: ${form.dadoNovo}\nFotos verificadas: ${simNao(form.fotosVerificadas)}\nObservações: ${form.observacoes || "—"}\n`;
-    } else { // Exclusão de Chave PIX e outros
+    } else if (form.tipo === "Exclusão de Chave PIX") {
+      msg += `Sem Débito em aberto: ${simNao(form.semDebitoAberto)}\n`;
+      msg += `N2 - Ouvidora: ${simNao(form.n2Ouvidora)}\n`;
+      msg += `Observações: ${form.observacoes || "—"}\n`;
+    } else { // Reativação de Conta e outros
       msg += `Observações: ${form.observacoes || "—"}\n`;
     }
     return msg;
@@ -157,6 +164,13 @@ export default function FormSolicitacao({ registrarLog }) {
       toast.error('CPF inválido. Digite os 11 dígitos.');
       return;
     }
+    
+    // Validação: Exclusão de Chave PIX requer pelo menos um dos dois campos
+    if (form.tipo === "Exclusão de Chave PIX" && !form.semDebitoAberto && !form.n2Ouvidora) {
+      toast.error('Para Exclusão de Chave PIX, é obrigatório selecionar pelo menos uma opção: "Sem Débito em aberto" ou "N2 - Ouvidora"');
+      return;
+    }
+    
     setLoading(true);
     registrarLog("Iniciando envio...");
 
@@ -369,6 +383,30 @@ export default function FormSolicitacao({ registrarLog }) {
           </div>
 
           {/* Anexos removidos nesta tela */}
+        </div>
+      )}
+
+      {form.tipo === "Exclusão de Chave PIX" && (
+        <div className="bg-white p-4 rounded-lg mt-2 border border-black/10">
+          <p className="text-sm text-black/70 mb-3">* Selecione pelo menos uma opção:</p>
+          <label className="flex items-center gap-2">
+            <input 
+              className="check-anim" 
+              type="checkbox" 
+              checked={form.semDebitoAberto} 
+              onChange={(e) => atualizar("semDebitoAberto", e.target.checked)} 
+            /> 
+            Sem Débito em aberto
+          </label>
+          <label className="flex items-center gap-2 mt-2">
+            <input 
+              className="check-anim" 
+              type="checkbox" 
+              checked={form.n2Ouvidora} 
+              onChange={(e) => atualizar("n2Ouvidora", e.target.checked)} 
+            /> 
+            N2 - Ouvidora
+          </label>
         </div>
       )}
 
