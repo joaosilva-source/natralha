@@ -1,9 +1,12 @@
 /**
  * VeloHub V3 - FormSolicitacao Component (Escalações Module)
- * VERSION: v1.4.0 | DATE: 2025-01-31 | AUTHOR: VeloHub Development Team
+ * VERSION: v1.4.1 | DATE: 2025-01-31 | AUTHOR: VeloHub Development Team
  * Branch: escalacoes
  * 
  * Componente de formulário para criação de solicitações técnicas
+ * 
+ * Mudanças v1.4.1:
+ * - Adicionado campo "PIX Liberado ou Excluído" no tipo Estorno com opções: "PIX Liberado", "PIX Excluído", "Não Aplicável"
  * 
  * Mudanças v1.4.0:
  * - Adicionado novo tipo de solicitação "Estorno" com checkboxes "Crédito do Trabalhador" e "Excedeu 40 dias"
@@ -66,6 +69,7 @@ const FormSolicitacao = ({ registrarLog }) => {
     creditoTrabalhador: false,
     excedeu40Dias: false,
     valorEstorno: '',
+    pixStatus: '', // PIX Liberado, PIX Excluído, Não Aplicável
     observacoes: '',
   });
   const [imagens, setImagens] = useState([]); // [{ name, type, data, preview }]
@@ -422,6 +426,7 @@ const FormSolicitacao = ({ registrarLog }) => {
       msg += `Crédito do Trabalhador: ${simNao(form.creditoTrabalhador)}\n`;
       msg += `Excedeu 40 dias: ${simNao(form.excedeu40Dias)}\n`;
       msg += `Valor: ${form.valorEstorno || '—'}\n`;
+      msg += `PIX Liberado ou Excluído: ${form.pixStatus || '—'}\n`;
       msg += `Observações: ${form.observacoes || '—'}\n`;
       if (imagens.length > 0 || videos.length > 0) {
         msg += `\n📎 Anexos: ${imagens.length} imagem(ns), ${videos.length} vídeo(s)\n`;
@@ -900,6 +905,19 @@ const FormSolicitacao = ({ registrarLog }) => {
                   onChange={(e) => atualizar('valorEstorno', e.target.value)}
                   required
                 />
+              </div>
+              <div>
+                <label className="text-sm text-gray-700 dark:text-gray-300">PIX Liberado ou Excluído</label>
+                <select
+                  className="w-full border border-gray-400 dark:border-gray-500 rounded-lg px-3 py-2 outline-none transition-all duration-200 focus:ring-1 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  value={form.pixStatus}
+                  onChange={(e) => atualizar('pixStatus', e.target.value)}
+                >
+                  <option value="">Selecione uma opção</option>
+                  <option value="PIX Liberado">PIX Liberado</option>
+                  <option value="PIX Excluído">PIX Excluído</option>
+                  <option value="Não Aplicável">Não Aplicável</option>
+                </select>
               </div>
               <div>
                 <label className="text-sm text-gray-700 dark:text-gray-300">Anexos (imagens e vídeos)</label>
