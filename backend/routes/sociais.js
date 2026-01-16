@@ -67,9 +67,18 @@ router.post('/tabulation', async (req, res) => {
   } catch (error) {
     global.emitTraffic('Sociais', 'error', 'Erro interno do servidor');
     global.emitLog('error', `POST /api/sociais/tabulation - Erro: ${error.message}`);
-    res.status(500).json({ 
+    console.error('❌ Erro detalhado em /tabulation:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Retornar mensagem de erro mais detalhada em desenvolvimento
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Erro interno do servidor: ${error.message}` 
+      : 'Erro interno do servidor';
+    
+    res.status(400).json({ 
       success: false, 
-      error: 'Erro interno do servidor' 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

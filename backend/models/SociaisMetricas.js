@@ -15,7 +15,17 @@ class SociaisMetricas {
   // Criar nova tabulação
   async create(tabulationData) {
     try {
-      const collection = this.getCollection();
+      // Verificar se o banco está conectado
+      let collection;
+      try {
+        collection = this.getCollection();
+      } catch (dbError) {
+        console.error('❌ Erro ao obter collection:', dbError);
+        return {
+          success: false,
+          error: `Banco de dados não conectado: ${dbError.message}`
+        };
+      }
       
       // Validar campos obrigatórios
       if (!tabulationData.clientName || !tabulationData.socialNetwork || !tabulationData.messageText) {
@@ -94,10 +104,22 @@ class SociaisMetricas {
         message: 'Tabulação criada com sucesso'
       };
     } catch (error) {
-      console.error('Erro ao criar tabulação:', error);
+      console.error('❌ Erro ao criar tabulação:', error);
+      console.error('❌ Stack trace:', error.stack);
+      console.error('❌ Dados recebidos:', tabulationData);
+      
+      // Verificar se é erro de conexão com banco
+      if (error.message && error.message.includes('não conectado')) {
+        return {
+          success: false,
+          error: `Banco de dados não conectado: ${error.message}`
+        };
+      }
+      
       return {
         success: false,
-        error: 'Erro interno do servidor'
+        error: `Erro ao criar tabulação: ${error.message}`,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       };
     }
   }
