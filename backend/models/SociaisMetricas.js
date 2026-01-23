@@ -44,7 +44,7 @@ class SociaisMetricas {
         };
       }
 
-      const validReasons = ['Produto', 'Suporte', 'Bug', 'Elogio', 'Reclamação', ' Oculto '];
+      const validReasons = ['Produto', 'Suporte', 'Bug', 'Elogio', 'Reclamação', ' Oculto ', 'Outro'];
       if (tabulationData.contactReason && !validReasons.includes(tabulationData.contactReason)) {
         return {
           success: false,
