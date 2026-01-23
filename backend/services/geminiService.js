@@ -86,11 +86,19 @@ const analyzeSentimentAndReason = async (text) => {
     }
     console.log('✅ Gemini AI configurado e pronto para análise');
 
-    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // Usar gemini-1.5-flash que é mais rápido e amplamente disponível
+    // Se não disponível, tentar gemini-1.5-pro como fallback
+    let model;
+    try {
+      model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    } catch (error) {
+      console.warn('⚠️ gemini-1.5-flash não disponível, tentando gemini-1.5-pro');
+      model = ai.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    }
     
     const prompt = `Analise o seguinte texto de atendimento de rede social e retorne APENAS um JSON válido com:
 1. "sentiment": (Positivo, Neutro ou Negativo)
-2. "reason": (Comercial, Suporte, Bug ou Elogio)
+2. "reason": (Produto, Suporte, Bug, Elogio, Reclamação, Oculto ou Outro)
 
 Texto: "${text}"
 
@@ -116,7 +124,7 @@ Retorne APENAS o JSON, sem markdown, sem código, sem explicações. Exemplo:
       
       // Validar estrutura
       const validSentiments = ['Positivo', 'Neutro', 'Negativo'];
-      const validReasons = ['Comercial', 'Suporte', 'Bug', 'Elogio'];
+      const validReasons = ['Produto', 'Suporte', 'Bug', 'Elogio', 'Reclamação', 'Oculto', 'Outro'];
       
       if (!validSentiments.includes(analysis.sentiment)) {
         analysis.sentiment = 'Neutro';
@@ -190,7 +198,27 @@ const generateExecutiveReport = async (data) => {
     }
     console.log('✅ Gemini AI configurado e pronto para gerar relatório');
 
-    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // Tentar modelos disponíveis em ordem de preferência
+    // gemini-1.5-pro-latest é geralmente mais estável
+    let model;
+    const modelsToTry = ['gemini-1.5-pro-latest', 'gemini-1.5-pro', 'gemini-pro'];
+    let lastError = null;
+    
+    for (const modelName of modelsToTry) {
+      try {
+        model = ai.getGenerativeModel({ model: modelName });
+        console.log(`✅ Usando modelo: ${modelName}`);
+        break;
+      } catch (error) {
+        console.warn(`⚠️ Modelo ${modelName} não disponível:`, error.message);
+        lastError = error;
+        continue;
+      }
+    }
+    
+    if (!model) {
+      throw new Error(`Nenhum modelo Gemini disponível. Último erro: ${lastError?.message || 'Desconhecido'}`);
+    }
     
     // Preparar dados para o prompt
     let dataSummary = '';
@@ -209,21 +237,62 @@ const generateExecutiveReport = async (data) => {
       dataSummary = String(data);
     }
 
-    const prompt = `Você é um consultor sênior de CX (Customer Experience). 
-Com base nos seguintes dados de atendimentos de redes sociais, escreva um relatório executivo narrativo, profissional e humano.
+    const prompt = `Contexto: Você é um Especialista em Customer Experience e Data Analytics. Sua tarefa é transformar dados brutos de interações (JSON/Bancos de Dados) em um Relatório Executivo de alto nível para a gestão.
 
-Dados:
+Instruções de Formatação:
+- Use Markdown com hierarquia clara
+- Tom: Profissional, analítico e humano. Evite "encher linguiça"
+- Foco: Insights acionáveis (o que os dados nos dizem para fazer?)
+
+DADOS COLETADOS:
 ${dataSummary}
 
-O relatório deve conter:
-- Título impactante
-- Resumo executivo (tópicos)
-- Análise estratégica por rede social e sentimento
-- Plano de Ação (Action Plan) com 3 pontos estratégicos
-- Conclusão
+ESTRUTURA OBRIGATÓRIA DO RELATÓRIO:
 
-Use formatação Markdown.
-Seja objetivo, profissional e forneça insights acionáveis.`;
+# 📊 Relatório Executivo de CX: Performance e Diagnóstico
+
+## 1. Visão Geral (Diagnóstico Situacional)
+Sintetize os dados de interações coletados:
+- **Amostra:** Total de interações coletadas
+- **Score de Satisfação:** Média de avaliação (se disponível)
+- **Sentimento Geral:** Apresente a distribuição completa (Positivo, Neutro, Negativo)
+- **Canal Dominante:** Identifique qual canal concentra a maior parte do tráfego
+
+## 2. Insights Estratégicos (Resumo Executivo)
+Extraia 2 conclusões de alto impacto baseadas nos dados:
+- O que a dominância de um canal ou sentimento revela sobre a marca hoje?
+
+## 3. Análise Integrada: Plataforma e Sentimento
+Relacione o volume de interações com o comportamento do usuário:
+- Analise cada rede social (Instagram, Facebook, TikTok, Messenger, YouTube, PlayStore) em relação ao volume e sentimento
+- Identifique tendências: onde estão os detratores? Qual plataforma tem melhor engajamento?
+- Correlação entre sentimento e motivo do contato
+- Padrões de comportamento por plataforma
+
+## 4. Pontos de Atrito (Pain Points)
+- **Gargalo Principal:** Detalhe o motivo mais frequente como principal detrator (se aplicável)
+- **Contexto:** Liste as palavras-chave recorrentes nas mensagens dos clientes
+- **Urgência:** Identifique a área que precisa de atenção imediata para estancar crises potenciais
+- Principais dúvidas e problemas identificados
+
+## 5. Action Plan (Recomendações Acionáveis)
+Crie 2 ações objetivas seguindo o formato: **Verbo de ação + O que + Para que**
+
+### Curto Prazo (Operacional):
+- [Verbo de ação] + [O que fazer] + [Para que/Objetivo]
+
+### Médio Prazo (Tático):
+- [Verbo de ação] + [O que fazer] + [Para que/Objetivo]
+
+## 6. Conclusão e Próximos Passos
+Finalize com uma síntese dos achados e a recomendação prioritária.
+
+IMPORTANTE:
+- Seja específico e use os dados fornecidos
+- Evite "encher linguiça" - vá direto ao ponto
+- Forneça insights acionáveis e práticos
+- Mantenha o tom profissional, analítico e humano
+- Use exemplos concretos extraídos dos dados quando possível`;
 
     const result = await model.generateContent(prompt);
     const report = result.response.text();
@@ -234,6 +303,21 @@ Seja objetivo, profissional e forneça insights acionáveis.`;
     };
   } catch (error) {
     console.error('Erro ao gerar relatório executivo:', error);
+    
+    // Verificar se é erro de modelo não encontrado (404)
+    const errorMessage = error.message || String(error);
+    const isModelNotFound = errorMessage.includes('404') || 
+                           errorMessage.includes('not found') || 
+                           errorMessage.includes('is not found');
+    
+    if (isModelNotFound) {
+      return {
+        success: false,
+        error: 'Modelo Gemini não disponível. O sistema tentará usar Groq como fallback.',
+        fallbackAvailable: true
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Erro ao gerar relatório executivo'
