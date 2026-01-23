@@ -7,8 +7,8 @@ class SociaisMetricas {
   }
 
   // Obter coleção
-  getCollection() {
-    const db = getSociaisDatabase();
+  async getCollection() {
+    const db = await getSociaisDatabase();
     return db.collection(this.collectionName);
   }
 
@@ -30,7 +30,7 @@ class SociaisMetricas {
       // Verificar se o banco está conectado
       let collection;
       try {
-        collection = this.getCollection();
+        collection = await this.getCollection();
       } catch (dbError) {
         console.error('❌ [SociaisMetricas] create - Erro ao obter collection:', dbError);
         return {
@@ -283,7 +283,7 @@ class SociaisMetricas {
   // Obter tabulação por ID
   async getById(id) {
     try {
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       const { ObjectId } = require('mongodb');
       const tabulation = await collection.findOne({ _id: new ObjectId(id) });
       
@@ -310,7 +310,7 @@ class SociaisMetricas {
   // Atualizar tabulação
   async update(id, updateData) {
     try {
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       const { ObjectId } = require('mongodb');
       
       // Validar enums se fornecidos
@@ -381,7 +381,7 @@ class SociaisMetricas {
   // Deletar tabulação
   async delete(id) {
     try {
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       const { ObjectId } = require('mongodb');
       
       const result = await collection.deleteOne({ _id: new ObjectId(id) });
@@ -411,7 +411,7 @@ class SociaisMetricas {
     try {
       console.log('📥 [SociaisMetricas] getMetrics - Filtros recebidos:', filters);
       
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       
       // Construir query de filtros (mesmo padrão do getAll)
       const query = {};
@@ -489,7 +489,7 @@ class SociaisMetricas {
     try {
       console.log('📥 [SociaisMetricas] getChartData - Filtros recebidos:', filters);
       
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       
       // Construir query de filtros
       const query = {};
@@ -558,7 +558,7 @@ class SociaisMetricas {
     try {
       console.log('📥 [SociaisMetricas] getRatingAverage - Filtros recebidos:', filters);
       
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       
       // Construir query de filtros
       const query = {};
@@ -680,7 +680,7 @@ class SociaisMetricas {
   // Criar índices para performance
   async createIndexes() {
     try {
-      const collection = this.getCollection();
+      const collection = await this.getCollection();
       
       await collection.createIndex({ socialNetwork: 1 });
       await collection.createIndex({ createdAt: -1 });

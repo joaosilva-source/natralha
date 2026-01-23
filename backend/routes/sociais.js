@@ -25,9 +25,16 @@ router.post('/tabulation', async (req, res) => {
     const { connectToDatabase } = require('../config/database');
     try {
       await connectToDatabase();
+      console.log('✅ [Route] MongoDB conectado antes de processar tabulação');
     } catch (dbError) {
-      console.error('❌ Erro ao conectar ao MongoDB:', dbError.message);
-      // Não bloquear se já estiver conectado
+      console.error('❌ [Route] Erro ao conectar ao MongoDB:', dbError.message);
+      console.error('❌ [Route] Stack:', dbError.stack);
+      // Retornar erro se não conseguir conectar
+      return res.status(503).json({
+        success: false,
+        error: 'Serviço temporariamente indisponível: Banco de dados não conectado',
+        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+      });
     }
     
     global.emitTraffic('Sociais', 'received', 'Entrada recebida - POST /api/sociais/tabulation');
