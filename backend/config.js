@@ -17,7 +17,8 @@ module.exports = {
   // ===========================================
   
   // MongoDB Connection String
-  MONGODB_URI: process.env.MONGO_ENV,
+  // Aceita tanto MONGO_ENV (legado) quanto MONGODB_URI (padrão)
+  MONGODB_URI: process.env.MONGODB_URI || process.env.MONGO_ENV,
   
   // ===========================================
   // GOOGLE SERVICES
@@ -69,10 +70,14 @@ module.exports = {
    */
   validateConfig() {
     const required = [
-      'MONGO_ENV',
+      // MongoDB pode ser MONGO_ENV ou MONGODB_URI
+      // 'MONGO_ENV', // Removido - agora opcional
       'GOOGLE_CLIENT_ID',
       'GOOGLE_CLIENT_SECRET'
     ];
+    
+    // Verificar se MongoDB está configurado (qualquer uma das variáveis)
+    const hasMongoDB = !!(this.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
     
     const optional = [
       'OPENAI_API_KEY',

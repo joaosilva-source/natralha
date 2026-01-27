@@ -9,6 +9,7 @@ Copie e cole estas no Render (Settings > Environment):
 ```env
 NODE_ENV=production
 PORT=8080
+MONGODB_URI=mongodb+srv://nathaliavillanova:TgoHptnjdfLOgrN1@velohubcentral.od7vwts.mongodb.net/?appName=VelohubCentral
 WHATSAPP_API_URL=https://whatsapp-api-y40p.onrender.com
 WHATSAPP_DEFAULT_JID=5511943952784@s.whatsapp.net
 ```
@@ -25,6 +26,11 @@ WHATSAPP_DEFAULT_JID=5511943952784@s.whatsapp.net
 # ===========================================
 NODE_ENV=production
 PORT=8080
+
+# ===========================================
+# MONGODB (OBRIGATÓRIO)
+# ===========================================
+MONGODB_URI=mongodb+srv://nathaliavillanova:TgoHptnjdfLOgrN1@velohubcentral.od7vwts.mongodb.net/?appName=VelohubCentral
 
 # ===========================================
 # WHATSAPP (OBRIGATÓRIO para relatórios)
@@ -56,6 +62,7 @@ CORS_ORIGIN=https://seu-dominio-customizado.com
 
 - [ ] `NODE_ENV=production`
 - [ ] `PORT=8080`
+- [ ] `MONGODB_URI` (URI de conexão do MongoDB)
 - [ ] `WHATSAPP_API_URL` (URL da API Baileys)
 - [ ] `WHATSAPP_DEFAULT_JID` (número formatado: `5511943952784@s.whatsapp.net`)
 - [ ] `GOOGLE_CLIENT_ID` (se usar login Google)
@@ -65,9 +72,10 @@ CORS_ORIGIN=https://seu-dominio-customizado.com
 
 ---
 
-## 🚫 NÃO CONFIGURAR
+## 📝 NOTAS IMPORTANTES
 
-- ❌ `MONGO_ENV` - **NÃO usar MongoDB**
+- ✅ `MONGODB_URI` - **OBRIGATÓRIO** - Use esta variável (não `MONGO_ENV`)
+- ⚠️ `MONGO_ENV` - Aceito como fallback, mas prefira `MONGODB_URI`
 - ❌ `GOOGLE_CREDENTIALS` - Só se precisar de Google Sheets
 - ❌ `PONTO_MAIS_*` - Só se usar Ponto Mais
 - ❌ `CHATBOT_*` - Só se usar chatbot
@@ -80,6 +88,7 @@ CORS_ORIGIN=https://seu-dominio-customizado.com
 ```env
 NODE_ENV=production
 PORT=8080
+MONGODB_URI=mongodb+srv://nathaliavillanova:TgoHptnjdfLOgrN1@velohubcentral.od7vwts.mongodb.net/?appName=VelohubCentral
 WHATSAPP_API_URL=https://whatsapp-api-y40p.onrender.com
 WHATSAPP_DEFAULT_JID=5511943952784@s.whatsapp.net
 ```

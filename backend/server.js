@@ -231,15 +231,19 @@ const formatArticleContent = (content) => {
 };
 
 // MongoDB Connection
-const uri = process.env.MONGO_ENV;
+// Aceita tanto MONGODB_URI (padrão) quanto MONGO_ENV (legado)
+const config = require('./config');
+const uri = config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI;
 
 console.log('🔍 Verificando configuração MongoDB...');
-console.log('🔍 MONGO_ENV definida:', !!uri);
+console.log('🔍 MONGODB_URI definida:', !!config.MONGODB_URI);
+console.log('🔍 MONGO_ENV definida:', !!process.env.MONGO_ENV);
 if (uri) {
-  console.log('🔍 MONGO_ENV (primeiros 50 chars):', uri.substring(0, 50) + '...');
+  console.log('🔍 URI MongoDB (primeiros 50 chars):', uri.substring(0, 50) + '...');
 } else {
-  console.warn('⚠️ MONGO_ENV não configurada - servidor iniciará sem MongoDB');
+  console.warn('⚠️ MongoDB não configurado - servidor iniciará sem MongoDB');
   console.warn('⚠️ APIs que dependem do MongoDB não funcionarão');
+  console.warn('⚠️ Configure MONGODB_URI ou MONGO_ENV nas variáveis de ambiente');
 }
 const client = uri ? new MongoClient(uri, {
   serverSelectionTimeoutMS: 15000, // 15 segundos timeout (otimizado para us-east-1)
@@ -284,16 +288,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Test connection endpoint - Versão simplificada (não requer MongoDB)
+// Test connection endpoint - Testa MongoDB se disponível
 app.get('/api/test', async (req, res) => {
   try {
-    res.json({ 
-      success: true, 
+    const response = {
+      success: true,
       message: 'Console de Conteúdo VeloHub API v4.2.0',
       status: 'OK',
       timestamp: new Date().toISOString(),
       monitor: '/monitor.html'
-    });
+    };
+    
+    // Testar MongoDB se estiver configurado
+    if (client) {
+      try {
+        await connectToMongo();
+        response.mongodb = {
+          connected: true,
+          status: 'OK'
+        };
+      } catch (mongoError) {
+        response.mongodb = {
+          connected: false,
+          status: 'ERROR',
+          error: mongoError.message
+        };
+      }
+    } else {
+      response.mongodb = {
+        connected: false,
+        status: 'NOT_CONFIGURED',
+        message: 'MongoDB não configurado'
+      };
+    }
+    
+    res.json(response);
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
