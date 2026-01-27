@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuração de Formulários - BacenN2</title>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .seletor-tipo-ficha {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+
+    .btn-tipo-ficha {
+      flex: 1;
+      padding: 20px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: 500;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-tipo-ficha:hover {
+      border-color: #1976d2;
+      background: #e3f2fd;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-tipo-ficha.ativo {
+      border-color: #1976d2;
+      background: #1976d2;
+      color: white;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      color: #1976d2;
+      border-left: 4px solid #1976d2;
+    }
+
+    .info-box p {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .btn-voltar {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #f5f5f5;
+      color: #333;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-voltar:hover {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚙️ Configuração de Formulários</h1>
+    <p class="subtitulo">Personalize a ordem de campos e seções nos formulários de edição</p>
+
+    <div class="info-box">
+      <p><strong>💡 Como usar:</strong></p>
+      <p>1. Selecione o tipo de ficha que deseja configurar (BACEN, N2 ou Chatbot)</p>
+      <p>2. Arraste os campos para reorganizar a ordem</p>
+      <p>3. Clique em "Salvar Ordem" para aplicar as alterações</p>
+      <p>4. A nova ordem será aplicada automaticamente nos formulários de edição</p>
+    </div>
+
+    <div class="seletor-tipo-ficha">
+      <button class="btn-tipo-ficha" onclick="selecionarTipo('bacen')">
+        📋 BACEN
+      </button>
+      <button class="btn-tipo-ficha" onclick="selecionarTipo('n2')">
+        📄 N2
+      </button>
+      <button class="btn-tipo-ficha" onclick="selecionarTipo('chatbot')">
+        💬 Chatbot
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <a href="index.html" class="btn-voltar">← Voltar</a>
+      <button class="btn-configurar-todos" onclick="abrirTodosEditores()" style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em;">
+        ⚙️ Configurar Todos os Tipos
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts na ordem correta -->
+  <script src="js/firebase-init.js"></script>
+  <script src="js/armazenamento-reclamacoes.js"></script>
+  <script src="js/configuracao-ordem-formularios.js"></script>
+  <script src="js/editor-ordem-formularios.js"></script>
+
+  <script>
+    let tipoSelecionado = null;
+
+    function selecionarTipo(tipo) {
+      tipoSelecionado = tipo;
+      
+      // Atualizar botões
+      document.querySelectorAll('.btn-tipo-ficha').forEach(btn => {
+        btn.classList.remove('ativo');
+      });
+      event.target.classList.add('ativo');
+
+      // Aguardar sistema estar pronto
+      if (window.configuracaoOrdemFormularios && window.configuracaoOrdemFormularios.isReady) {
+        abrirEditor(tipo);
+      } else {
+        // Aguardar sistema estar pronto
+        window.addEventListener('configuracaoOrdemReady', () => {
+          abrirEditor(tipo);
+        }, { once: true });
+      }
+    }
+
+    function abrirEditor(tipo) {
+      if (window.abrirEditorOrdemFormulario) {
+        window.abrirEditorOrdemFormulario(tipo);
+      } else {
+        console.error('Editor de ordem não está disponível');
+        alert('⚠️ Sistema ainda não está pronto. Aguarde alguns instantes e tente novamente.');
+      }
+    }
+
+    function abrirTodosEditores() {
+      const tipos = ['bacen', 'n2', 'chatbot'];
+      tipos.forEach((tipo, index) => {
+        setTimeout(() => {
+          if (window.abrirEditorOrdemFormulario) {
+            window.abrirEditorOrdemFormulario(tipo);
+          }
+        }, index * 500); // Abrir com delay para não sobrecarregar
+      });
+    }
+
+    // Aguardar tudo estar pronto
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ Página de configuração carregada');
+    });
+  </script>
+</body>
+</html>

@@ -21,3 +21,18 @@ render.yaml
 railway.json
 index.js
 api/
+# Excluir todos os arquivos JS da raiz que não são parte do frontend
+start-frontend.js
+insert_module_status_mongodb.js
+test-config.js
+CODIGO_*.js
+*.config.js
+postcss.config.js
+tailwind.config.js
+# Excluir arquivos de teste e temporários
+test_*.js
+temp_*.js
+# Excluir outros arquivos problemáticos
+Procfile
+cleanup.sh
+*.sh
