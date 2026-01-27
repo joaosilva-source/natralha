@@ -1,0 +1,173 @@
+// VERSION: v1.9.0 | DATE: 2025-11-25 | AUTHOR: VeloHub Development Team
+const mongoose = require('mongoose');
+// ✅ USAR CONEXÃO COMPARTILHADA para garantir que populate funcione corretamente
+const { getAnalisesConnection } = require('../config/analisesConnection');
+
+// Schema para critérios GPT
+const criteriosGPTSchema = new mongoose.Schema({
+  saudacaoAdequada: {
+    type: Boolean,
+    default: false
+  },
+  escutaAtiva: {
+    type: Boolean,
+    default: false
+  },
+  resolucaoQuestao: {
+    type: Boolean,
+    default: false
+  },
+  empatiaCordialidade: {
+    type: Boolean,
+    default: false
+  },
+  direcionouPesquisa: {
+    type: Boolean,
+    default: false
+  },
+  procedimentoIncorreto: {
+    type: Boolean,
+    default: false
+  },
+  encerramentoBrusco: {
+    type: Boolean,
+    default: false
+  },
+  clarezaObjetividade: {
+    type: Boolean,
+    default: false
+  },
+  dominioAssunto: {
+    type: Boolean,
+    default: false
+  }
+}, { _id: false });
+
+// Schema principal para qualidade_avaliacoes_gpt
+const qualidadeAvaliacaoGPTSchema = new mongoose.Schema({
+  avaliacao_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'QualidadeAvaliacao'
+  },
+  analiseGPT: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  pontuacaoGPT: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
+  },
+  criteriosGPT: {
+    type: criteriosGPTSchema,
+    required: true
+  },
+  confianca: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
+  },
+  palavrasCriticas: [{
+    type: String,
+    trim: true
+  }],
+  calculoDetalhado: [{
+    type: String,
+    trim: true
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Middleware para atualizar updatedAt antes de salvar
+qualidadeAvaliacaoGPTSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Middleware para atualizar updatedAt antes de atualizar
+qualidadeAvaliacaoGPTSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
+// Índices para otimização de consultas
+qualidadeAvaliacaoGPTSchema.index({ avaliacao_id: 1 });
+qualidadeAvaliacaoGPTSchema.index({ pontuacaoGPT: 1 });
+qualidadeAvaliacaoGPTSchema.index({ confianca: 1 });
+qualidadeAvaliacaoGPTSchema.index({ createdAt: -1 });
+
+// Modelo - criado com lazy loading
+let QualidadeAvaliacaoGPTModel = null;
+
+const getModel = () => {
+  if (!QualidadeAvaliacaoGPTModel) {
+    try {
+      const connection = getAnalisesConnection();
+      
+      // Validar que conexão existe e está válida
+      if (!connection) {
+        throw new Error('Conexão MongoDB não foi criada');
+      }
+      
+      QualidadeAvaliacaoGPTModel = connection.model('QualidadeAvaliacaoGPT', qualidadeAvaliacaoGPTSchema, 'qualidade_avaliacoes_gpt');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar modelo QualidadeAvaliacaoGPT:', error);
+      throw error;
+    }
+  }
+  return QualidadeAvaliacaoGPTModel;
+};
+
+// Criar função construtora que delega para o modelo real
+const QualidadeAvaliacaoGPTConstructor = function(...args) {
+  const model = getModel();
+  if (!model) {
+    throw new Error('Modelo QualidadeAvaliacaoGPT não foi inicializado');
+  }
+  return new model(...args);
+};
+
+// Copiar propriedades estáticas do modelo para o construtor
+Object.setPrototypeOf(QualidadeAvaliacaoGPTConstructor.prototype, mongoose.Model.prototype);
+
+module.exports = new Proxy(QualidadeAvaliacaoGPTConstructor, {
+  get: (target, prop) => {
+    // Propriedades especiais do Proxy
+    if (prop === Symbol.toStringTag) {
+      return 'QualidadeAvaliacaoGPT';
+    }
+    
+    const model = getModel();
+    if (!model) {
+      throw new Error('Modelo QualidadeAvaliacaoGPT não foi inicializado');
+    }
+    
+    // Se a propriedade existe no modelo, retornar do modelo
+    if (prop in model || typeof model[prop] !== 'undefined') {
+      const value = model[prop];
+      // Bind métodos para manter contexto correto
+      if (typeof value === 'function' && prop !== 'constructor') {
+        return value.bind(model);
+      }
+      return value;
+    }
+    
+    // Caso contrário, retornar do target (função construtora)
+    return target[prop];
+  },
+  construct: (target, args) => {
+    const model = getModel();
+    return new model(...args);
+  }
+});

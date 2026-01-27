@@ -1,0 +1,110 @@
+// VERSION: v1.7.0 | DATE: 2025-11-25 | AUTHOR: VeloHub Development Team
+const mongoose = require('mongoose');
+// ✅ USAR CONEXÃO COMPARTILHADA para garantir que populate funcione corretamente
+const { getAnalisesConnection } = require('../config/analisesConnection');
+
+// Schema para qualidade_funcoes - COMPLIANCE OBRIGATÓRIO
+const qualidadeFuncoesSchema = new mongoose.Schema({
+  funcao: {
+    type: String,
+    required: [true, 'Nome da função é obrigatório'],
+    trim: true,
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return v && v.trim().length > 0;
+      },
+      message: 'Nome da função não pode estar vazio'
+    }
+  },
+  descricao: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Middleware para atualizar updatedAt antes de salvar
+qualidadeFuncoesSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Middleware para atualizar updatedAt antes de atualizar
+qualidadeFuncoesSchema.pre(['updateOne', 'findOneAndUpdate'], function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
+// Modelo - criado com lazy loading
+let QualidadeFuncoesModel = null;
+
+const getModel = () => {
+  if (!QualidadeFuncoesModel) {
+    try {
+      const connection = getAnalisesConnection();
+      
+      // Validar que conexão existe e está válida
+      if (!connection) {
+        throw new Error('Conexão MongoDB não foi criada');
+      }
+      
+      QualidadeFuncoesModel = connection.model('QualidadeFuncoes', qualidadeFuncoesSchema, 'qualidade_funcoes');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar modelo QualidadeFuncoes:', error);
+      throw error;
+    }
+  }
+  return QualidadeFuncoesModel;
+};
+
+// Criar função construtora que delega para o modelo real
+const QualidadeFuncoesConstructor = function(...args) {
+  const model = getModel();
+  if (!model) {
+    throw new Error('Modelo QualidadeFuncoes não foi inicializado');
+  }
+  return new model(...args);
+};
+
+// Copiar propriedades estáticas do modelo para o construtor
+Object.setPrototypeOf(QualidadeFuncoesConstructor.prototype, mongoose.Model.prototype);
+
+module.exports = new Proxy(QualidadeFuncoesConstructor, {
+  get: (target, prop) => {
+    // Propriedades especiais do Proxy
+    if (prop === Symbol.toStringTag) {
+      return 'QualidadeFuncoes';
+    }
+    
+    const model = getModel();
+    if (!model) {
+      throw new Error('Modelo QualidadeFuncoes não foi inicializado');
+    }
+    
+    // Se a propriedade existe no modelo, retornar do modelo
+    if (prop in model || typeof model[prop] !== 'undefined') {
+      const value = model[prop];
+      // Bind métodos para manter contexto correto
+      if (typeof value === 'function' && prop !== 'constructor') {
+        return value.bind(model);
+      }
+      return value;
+    }
+    
+    // Caso contrário, retornar do target (função construtora)
+    return target[prop];
+  },
+  construct: (target, args) => {
+    const model = getModel();
+    return new model(...args);
+  }
+});

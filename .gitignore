@@ -1,3 +1,5 @@
+# VERSION: v3.0.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team
+
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -19,6 +21,7 @@ env
 backend/env
 
 # Logs
+logs
 *.log
 
 # Runtime data
@@ -34,6 +37,7 @@ coverage/
 .nyc_output
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # Optional npm cache directory
@@ -81,6 +85,18 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Worker separado (repositório próprio)
+worker-qualidade/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test

@@ -1,51 +1,39 @@
-# cloudbuild.yaml - CI/CD para Google Cloud Build
-# VERSION: v1.2.0 | DATE: 2025-01-30 | AUTHOR: Lucas Gravina - VeloHub Development Team
-# Configuração para deploy automático do VeloHub V3 - Variáveis de ambiente corrigidas
+# VERSION: v1.2.0 | DATE: 2025-01-30 | AUTHOR: VeloHub Development Team
+# Cloud Build configuration para deploy no Cloud Run
 
 steps:
-  # Instalar dependências
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['install']
-    dir: '.'
-
-  # Deploy para App Engine
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: 
-      - 'app'
-      - 'deploy'
-      - 'app.yaml'
-      - '--version=$BUILD_ID'
-      - '--promote'
-    dir: '.'
-
-  # Deploy para Cloud Run
+  # Build da imagem Docker para Backend API
   - name: 'gcr.io/cloud-builders/docker'
-    args: 
+    args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/velohub:$BUILD_ID'
-      - '--build-arg'
-      - 'REACT_APP_GOOGLE_CLIENT_ID=278491073220-eb4ogvn3aifu0ut9mq3rvu5r9r9l3137.apps.googleusercontent.com'
-      - '--build-arg'
-      - 'REACT_APP_AUTHORIZED_DOMAIN=velotax.com.br'
-      - '--build-arg'
-      - 'REACT_APP_API_URL=https://velohub-278491073220.us-east1.run.app/api'
+      - 'gcr.io/$PROJECT_ID/staging-skynet:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/staging-skynet:latest'
+      - '-f'
+      - 'Dockerfile'
       - '.'
-    dir: '.'
+
+  # Push da imagem para Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/staging-skynet:$SHORT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: 
+    args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/velohub:$BUILD_ID'
-    dir: '.'
+      - 'gcr.io/$PROJECT_ID/staging-skynet:latest'
 
-  - name: 'gcr.io/cloud-builders/gcloud'
+  # Deploy no Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - 'velohub-${_SERVICE_NAME}'
+      - 'staging-skynet'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/velohub:$BUILD_ID'
+      - 'gcr.io/$PROJECT_ID/staging-skynet:$SHORT_SHA'
       - '--region'
       - 'us-east1'
       - '--platform'
@@ -53,18 +41,24 @@ steps:
       - '--allow-unauthenticated'
       - '--port'
       - '8080'
-    dir: '.'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--max-instances'
+      - '10'
 
-# Configurações do build
-options:
-  machineType: 'E2_HIGHCPU_8'
-  diskSizeGb: 100
-  logging: CLOUD_LOGGING_ONLY
+# Imagens a serem armazenadas no Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/staging-skynet:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/staging-skynet:latest'
 
 # Timeout do build (10 minutos)
 timeout: '600s'
 
-# Substituições de variáveis
-substitutions:
-  _SERVICE_NAME: '278491073220'
-  _REGION: 'us-east1'
+# Opções do build
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY

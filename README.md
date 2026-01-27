@@ -1,174 +1,247 @@
-# VeloHub V3 - Portal de Processos Inteligente
+# 🚀 Backend API - Console de Conteúdo VeloHub
+<!-- VERSION: v3.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team -->
 
-<!-- VERSION: v3.1.5 | DATE: 2025-01-30 | AUTHOR: VeloHub Development Team -->
+## 📋 **Descrição**
+Backend API para o Console de Conteúdo VeloHub. Esta é uma API RESTful construída com Express.js e MongoDB, responsável por gerenciar artigos, velonews, perguntas do bot e métricas IGP.
 
-## 📋 Descrição
-Portal de processos com chatbot inteligente integrado, sistema de notícias críticas, suporte ao usuário e integração completa com Google Cloud Platform.
+## 📦 **Repositório GitHub**
+- **Repositório:** [https://github.com/admVeloHub/Backend-GCP](https://github.com/admVeloHub/Backend-GCP)
+- **Worker Separado:** [https://github.com/admVeloHub/gcp-worker-qualidade](https://github.com/admVeloHub/gcp-worker-qualidade)
 
-## 🚀 Como Executar
+**IMPORTANTE:** Este repositório contém apenas o Backend API. O Worker de processamento de áudio está em repositório separado.
 
-### Desenvolvimento Local
+## 🛠️ **Tecnologias**
+- **Node.js** (>=16.0.0)
+- **Express.js** - Framework web
+- **MongoDB** - Banco de dados
+- **Socket.IO** - WebSocket para monitoramento em tempo real
+- **CORS** - Cross-origin resource sharing
+- **Helmet** - Segurança
+- **Rate Limiting** - Controle de requisições
 
-**REGRA DE PORTAS:**
-- **Frontend**: Porta **8080** (http://localhost:8080)
-- **Backend**: Porta **8090** (http://localhost:8090)
+## 📁 **Estrutura do Projeto**
+```
+backend-deploy/
+├── backend/
+│   ├── config/
+│   │   ├── database.js          # Configuração do MongoDB
+│   │   └── collections.js       # Configuração das collections
+│   ├── middleware/
+│   │   └── monitoring.js        # Middleware de monitoramento
+│   ├── models/
+│   │   ├── Artigos.js          # Modelo de artigos
+│   │   ├── BotPerguntas.js     # Modelo de perguntas
+│   │   └── Velonews.js         # Modelo de velonews
+│   ├── public/
+│   │   └── monitor.html        # Monitor Skynet (interface)
+│   ├── routes/
+│   │   ├── artigos.js          # Rotas de artigos
+│   │   ├── botPerguntas.js     # Rotas de perguntas
+│   │   ├── igp.js              # Rotas de métricas IGP
+│   │   └── velonews.js         # Rotas de velonews
+│   └── server.js               # Servidor principal
+├── package.json                # Dependências do projeto
+├── env.example                 # Exemplo de variáveis de ambiente
+└── README.md                   # Este arquivo
+```
+
+## 🔧 **Configuração**
+
+### **1. Instalar Dependências**
+```bash
+npm install
+```
+
+### **2. Configurar Variáveis de Ambiente**
+Copie o arquivo `env.example` para `.env` e configure as variáveis:
 
 ```bash
-# Instalar dependências
-npm install
+cp env.example .env
+```
 
-# Executar servidor backend (porta 8090)
-cd backend && npm install && npm start
+**Variáveis obrigatórias:**
+- `MONGODB_URI` - String de conexão do MongoDB
+- `CORS_ORIGIN` - URL do frontend (ex: https://front-console.vercel.app)
 
-# Executar frontend (porta 8080) - em outro terminal
+### **3. Configuração do MongoDB**
+Para produção, use MongoDB Atlas:
+1. Crie uma conta no [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Crie um cluster
+3. Configure a string de conexão no `.env`
+
+**Exemplo de MONGODB_URI:**
+```
+MONGODB_URI=mongodb+srv://lucasgravina:nKQu8bSN6iZl8FPo@velohubcentral.od7vwts.mongodb.net/?retryWrites=true&w=majority&appName=VelohubCentral
+```
+
+## 🚀 **Deploy**
+
+### **Opção 1: Railway**
+1. Conecte sua conta GitHub ao Railway
+2. Selecione este repositório
+3. Configure as variáveis de ambiente
+4. Deploy automático
+
+### **Opção 2: Render**
+1. Conecte sua conta GitHub ao Render
+2. Crie um novo Web Service
+3. Selecione este repositório
+4. Configure:
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Environment:** Node
+5. Configure as variáveis de ambiente
+6. Deploy
+
+### **Opção 3: Heroku**
+1. Instale o Heroku CLI
+2. Crie um novo app:
+   ```bash
+   heroku create seu-app-backend
+   ```
+3. Configure as variáveis de ambiente:
+   ```bash
+   heroku config:set MONGODB_URI=sua-string-de-conexao
+   heroku config:set CORS_ORIGIN=https://front-console.vercel.app
+   ```
+4. Deploy:
+   ```bash
+   git push heroku main
+   ```
+
+### **Opção 4: DigitalOcean App Platform**
+1. Conecte sua conta GitHub
+2. Crie um novo App
+3. Selecione este repositório
+4. Configure:
+   - **Source Directory:** `/`
+   - **Build Command:** `npm install`
+   - **Run Command:** `npm start`
+5. Configure as variáveis de ambiente
+6. Deploy
+
+## 🔗 **Endpoints da API**
+
+### **Health Check**
+- `GET /api/health` - Status da API e banco de dados
+
+### **Artigos**
+- `GET /api/artigos` - Listar todos os artigos
+- `POST /api/artigos` - Criar novo artigo
+- `PUT /api/artigos/:id` - Atualizar artigo
+- `DELETE /api/artigos/:id` - Deletar artigo
+
+### **Velonews**
+- `GET /api/velonews` - Listar todas as velonews
+- `POST /api/velonews` - Criar nova velonews
+- `PUT /api/velonews/:id` - Atualizar velonews
+- `DELETE /api/velonews/:id` - Deletar velonews
+
+### **Bot Perguntas**
+- `GET /api/bot-perguntas` - Listar todas as perguntas
+- `POST /api/bot-perguntas` - Criar nova pergunta
+- `PUT /api/bot-perguntas/:id` - Atualizar pergunta
+- `DELETE /api/bot-perguntas/:id` - Deletar pergunta
+
+### **IGP (Métricas)**
+- `GET /api/igp/metrics` - Obter métricas
+- `GET /api/igp/reports` - Obter relatórios
+- `POST /api/igp/export/:format` - Exportar dados
+
+### **Monitor Skynet**
+- `GET /monitor` - Interface de monitoramento em tempo real
+- WebSocket em tempo real para tráfego da API
+- Console logs, tráfego de API e visualização JSON
+
+## 🔒 **Segurança**
+- **CORS** configurado para o domínio do frontend
+- **Helmet** para headers de segurança
+- **Rate Limiting** (100 requests por 15 minutos)
+- **Validação** de entrada de dados
+- **Sanitização** de dados
+
+## 📊 **Monitoramento**
+- Health check endpoint para verificar status
+- Logs estruturados
+- Tratamento de erros centralizado
+
+## 🧪 **Testando a API**
+
+### **Localmente**
+```bash
 npm start
 ```
 
-### Produção (Google Cloud)
+### **Verificar se está funcionando**
 ```bash
-# Deploy para App Engine
-gcloud app deploy
-
-# Deploy para Cloud Run
-gcloud run deploy
+curl https://seu-backend-url.com/api/health
 ```
 
-## 🔧 Configuração de Ambiente
+## 🔄 **Atualização do Frontend**
+Após o deploy do backend, atualize o frontend:
 
-### Variáveis de Ambiente Necessárias
-O projeto utiliza variáveis de ambiente para configuração segura. Configure no Google Cloud Secret Manager:
+1. Edite `src/services/api.js`
+2. Altere a URL base:
+   ```javascript
+   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://seu-backend-url.com/api';
+   ```
+3. Configure a variável de ambiente no Vercel:
+   ```
+   REACT_APP_API_URL=https://seu-backend-url.com/api
+   ```
 
-- `MONGO_ENV` - String de conexão MongoDB
-- `GOOGLE_CLIENT_ID` - Client ID do Google OAuth
-- `GOOGLE_CLIENT_SECRET` - Client Secret do Google OAuth
-- `GPT_API` - Chave da API OpenAI
-- `GEMINI_API` - Chave da API Google Gemini
-- `GOOGLE_CREDENTIALS` - Credenciais do Google Sheets
+## 📝 **Logs e Debugging**
+- Logs são exibidos no console
+- Use `NODE_ENV=development` para logs detalhados
+- Health check retorna status do banco de dados
 
-### Teste de Configuração
-```bash
-node test-config.js
+## 🆘 **Troubleshooting**
+
+### **Erro de Conexão MongoDB**
+- Verifique se a string de conexão está correta
+- Confirme se o IP está liberado no MongoDB Atlas
+- Verifique se o usuário tem permissões
+
+### **Erro CORS**
+- Confirme se `CORS_ORIGIN` está configurado corretamente
+- Verifique se o frontend está usando a URL correta
+
+### **Rate Limit**
+- Ajuste `RATE_LIMIT_MAX_REQUESTS` se necessário
+- Verifique se não há muitas requisições simultâneas
+
+## 📞 **Suporte**
+Para suporte técnico, entre em contato com a equipe de desenvolvimento VeloHub.
+
+---
+**Versão:** 3.1.0  
+**Data:** 2024-12-19  
+**Autor:** VeloHub Development Team
+
+## 🔍 **Monitor Skynet**
+
+O Monitor Skynet é uma interface de monitoramento em tempo real que permite observar o funcionamento da API. Acesse através da URL:
+
+```
+https://sua-url-backend.com/monitor
 ```
 
-## 📁 Estrutura do Projeto
+### **Características do Monitor:**
+- **Design:** Background preto com tema futurístico
+- **Título:** "MONITOR SKYNET" em fonte Anton
+- **3 Containers Verticais:**
+  - **Esquerda:** Console do navegador em tempo real
+  - **Central:** Tráfego da API mostrando:
+    - Entrada recebida
+    - Origem (Artigo, Velonews, Bot Perguntas, IGP)
+    - Transmitindo para DB
+    - Concluído/Erro
+  - **Direita:** JSON corrente dos dados sendo processados
 
-```
-VeloHub V3/
-├── src/                    # Frontend React
-│   ├── components/         # Componentes React
-│   ├── config/            # Configurações do frontend
-│   ├── lib/               # Bibliotecas e utilitários
-│   └── services/          # Serviços de API
-├── backend/               # Backend Node.js
-│   ├── services/          # Serviços do chatbot
-│   └── config.js          # Configuração centralizada
-├── public/                # Arquivos estáticos
-├── app.yaml              # Configuração Google App Engine
-├── cloudbuild.yaml       # CI/CD Google Cloud Build
-├── Dockerfile            # Container Docker
-└── tailwind.config.js    # Configuração Tailwind CSS
-```
-
-## 🎨 Funcionalidades Principais
-
-### 🤖 Chatbot Inteligente
-- ✅ Integração com OpenAI e Google Gemini
-- ✅ Sistema de fallback automático
-- ✅ Memória de conversa (10 minutos)
-- ✅ Análise de perguntas com IA
-- ✅ Sistema de esclarecimento inteligente
-- ✅ Logs de uso e feedback
-
-### 📰 Sistema de Notícias
-- ✅ Notícias críticas em tempo real
-- ✅ Sistema de alertas prioritários
-- ✅ Integração com MongoDB
-- ✅ Cache inteligente de dados
-
-### 🔐 Autenticação e Segurança
-- ✅ Google OAuth 2.0
-- ✅ Domínio autorizado (@velotax.com.br)
-- ✅ Sessões seguras
-- ✅ Secrets gerenciados pelo Google Cloud
-
-### 📊 Logs e Monitoramento
-- ✅ Logs de atividade no MongoDB
-- ✅ Logs de uso da IA no Google Sheets
-- ✅ Sistema de feedback
-- ✅ Métricas de performance
-
-## 🛠️ Tecnologias Utilizadas
-
-### Frontend
-- **React 18** - Interface de usuário
-- **Tailwind CSS** - Estilização com tema VeloHub
-- **Lucide React** - Ícones modernos
-
-### Backend
-- **Node.js** - Servidor backend
-- **Express.js** - Framework web
-- **MongoDB** - Banco de dados
-- **Google Cloud APIs** - Integração com serviços Google
-
-### Infraestrutura
-- **Google App Engine** - Hospedagem
-- **Google Cloud Run** - Containers
-- **Google Secret Manager** - Gerenciamento de secrets
-- **Google Cloud Build** - CI/CD
-
-## 📝 Scripts Disponíveis
-
-### Desenvolvimento
-```bash
-npm start              # Frontend React (porta 8080)
-npm run build          # Build de produção
-cd backend && npm start # Backend Node.js (porta 8090)
-```
-
-### Testes e Diagnóstico
-```bash
-node test-config.js    # Teste de configuração
-npm run lint           # Verificação de código
-```
-
-### Deploy
-```bash
-gcloud app deploy      # Deploy App Engine
-gcloud run deploy      # Deploy Cloud Run
-```
-
-## 🔒 Segurança
-
-### ✅ Implementado
-- **Secrets gerenciados** pelo Google Secret Manager
-- **Nenhuma chave hardcoded** no código
-- **Variáveis de ambiente** para todas as configurações
-- **CORS configurado** adequadamente
-- **Autenticação OAuth** com domínio restrito
-
-### 🛡️ Boas Práticas
-- Configurações sensíveis via Secret Manager
-- Validação de entrada em todas as APIs
-- Logs de segurança e auditoria
-- Timeouts configurados para APIs externas
-
-## 🚀 Deploy e Produção
-
-### Google Cloud Platform
-- **App Engine** para hospedagem principal
-- **Cloud Run** para containers
-- **Secret Manager** para chaves sensíveis
-- **Cloud Build** para CI/CD automático
-
-### Monitoramento
-- Logs centralizados no Google Cloud Logging
-- Métricas de performance
-- Alertas de erro automáticos
-- Dashboard de monitoramento
-
-## 📞 Suporte
-
-Para suporte técnico ou dúvidas sobre o projeto, consulte:
-- **Documentação**: `CONFIGURACAO_CHAVES_API.md`
-- **Logs**: Google Cloud Console
-- **Configuração**: `test-config.js`
+### **Funcionalidades:**
+- **WebSocket em tempo real** para comunicação instantânea
+- **Logs coloridos** (info, success, warning, error)
+- **Status de conexão** visual
+- **Buttons para limpar** cada painel
+- **Animações** para entradas de tráfego
+- **Auto-scroll** nos painéis

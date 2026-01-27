@@ -1,0 +1,182 @@
+# 🚀 Backend API - Console de Conteúdo VeloHub
+
+<!-- VERSION: v3.1.0 | DATE: 2024-12-19 | AUTHOR: VeloHub Development Team -->
+
+## 📋 **Descrição**
+Backend API para o Console de Conteúdo VeloHub. Esta é uma API RESTful construída com Express.js e MongoDB, responsável por gerenciar artigos, velonews, perguntas do bot e métricas IGP.
+
+## 🛠️ **Tecnologias**
+- **Node.js** (>=16.0.0)
+- **Express.js** - Framework web
+- **MongoDB** - Banco de dados
+- **Socket.IO** - WebSocket para monitoramento em tempo real
+- **CORS** - Cross-origin resource sharing
+- **Helmet** - Segurança
+- **Rate Limiting** - Controle de requisições
+
+## 📁 **Estrutura do Projeto**
+```
+back-console/
+├── backend/
+│   ├── config/
+│   │   ├── database.js          # Configuração do MongoDB
+│   │   └── collections.js       # Configuração das collections
+│   ├── middleware/
+│   │   └── monitoring.js        # Middleware de monitoramento
+│   ├── models/
+│   │   ├── Artigos.js          # Modelo de artigos
+│   │   ├── BotPerguntas.js     # Modelo de perguntas
+│   │   └── Velonews.js         # Modelo de velonews
+│   ├── public/
+│   │   └── monitor.html        # Monitor Skynet (interface)
+│   ├── routes/
+│   │   ├── artigos.js          # Rotas de artigos
+│   │   ├── botPerguntas.js     # Rotas de perguntas
+│   │   ├── igp.js              # Rotas de métricas IGP
+│   │   └── velonews.js         # Rotas de velonews
+│   └── server.js               # Servidor principal
+├── package.json                # Dependências do projeto
+├── vercel.json                # Configuração Vercel
+└── README.md                  # Este arquivo
+```
+
+## 🔧 **Configuração**
+
+### **1. Instalar Dependências**
+```bash
+npm install
+```
+
+### **2. Configurar Variáveis de Ambiente**
+Configure as seguintes variáveis no Vercel:
+
+```bash
+MONGODB_URI=mongodb+srv://lucasgravina:nKQu8bSN6iZl8FPo@velohubcentral.od7vwts.mongodb.net/?retryWrites=true&w=majority&appName=VelohubCentral
+MONGODB_DB_NAME=console_conteudo
+NODE_ENV=production
+CORS_ORIGIN=https://front-console.vercel.app
+```
+
+## 🚀 **Deploy**
+
+### **Vercel (Recomendado)**
+1. Conecte o repositório ao Vercel
+2. Configure as variáveis de ambiente
+3. Deploy automático
+
+## 🔗 **Endpoints da API**
+
+### **Health Check**
+- `GET /api/health` - Status da API e banco de dados
+
+### **Artigos**
+- `GET /api/artigos` - Listar todos os artigos
+- `POST /api/artigos` - Criar novo artigo
+- `PUT /api/artigos/:id` - Atualizar artigo
+- `DELETE /api/artigos/:id` - Deletar artigo
+
+### **Velonews**
+- `GET /api/velonews` - Listar todas as velonews
+- `POST /api/velonews` - Criar nova velonews
+- `PUT /api/velonews/:id` - Atualizar velonews
+- `DELETE /api/velonews/:id` - Deletar velonews
+
+### **Bot Perguntas**
+- `GET /api/bot-perguntas` - Listar todas as perguntas
+- `POST /api/bot-perguntas` - Criar nova pergunta
+- `PUT /api/bot-perguntas/:id` - Atualizar pergunta
+- `DELETE /api/bot-perguntas/:id` - Deletar pergunta
+
+### **IGP (Métricas)**
+- `GET /api/igp/metrics` - Obter métricas
+- `GET /api/igp/reports` - Obter relatórios
+- `POST /api/igp/export/:format` - Exportar dados
+
+### **Monitor Skynet**
+- `GET /monitor` - Interface de monitoramento em tempo real
+- WebSocket em tempo real para tráfego da API
+- Console logs, tráfego de API e visualização JSON
+
+## 🔒 **Segurança**
+- **CORS** configurado para o domínio do frontend
+- **Helmet** para headers de segurança
+- **Rate Limiting** (100 requests por 15 minutos)
+- **Validação** de entrada de dados
+- **Sanitização** de dados
+
+## 📊 **Monitoramento**
+- Health check endpoint para verificar status
+- Logs estruturados
+- Tratamento de erros centralizado
+- **Monitor Skynet** para observação em tempo real
+
+## 🔍 **Monitor Skynet**
+
+O Monitor Skynet é uma interface de monitoramento em tempo real que permite observar o funcionamento da API. Acesse através da URL:
+
+```
+https://back-console.vercel.app/monitor
+```
+
+### **Características do Monitor:**
+- **Design:** Background preto com tema futurístico
+- **Título:** "MONITOR SKYNET" em fonte Anton
+- **3 Containers Verticais:**
+  - **Esquerda:** Console do navegador em tempo real
+  - **Central:** Tráfego da API mostrando:
+    - Entrada recebida
+    - Origem (Artigo, Velonews, Bot Perguntas, IGP)
+    - Transmitindo para DB
+    - Concluído/Erro
+  - **Direita:** JSON corrente dos dados sendo processados
+
+### **Funcionalidades:**
+- **WebSocket em tempo real** para comunicação instantânea
+- **Logs coloridos** (info, success, warning, error)
+- **Status de conexão** visual
+- **Buttons para limpar** cada painel
+- **Animações** para entradas de tráfego
+- **Auto-scroll** nos painéis
+
+## 🧪 **Testando a API**
+
+### **Health Check**
+```bash
+curl https://back-console.vercel.app/api/health
+```
+
+### **Criar Artigo**
+```bash
+curl -X POST https://back-console.vercel.app/api/artigos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Título do Artigo",
+    "content": "Conteúdo do artigo",
+    "category": "tecnologia",
+    "keywords": "nodejs, mongodb, api"
+  }'
+```
+
+## 🆘 **Troubleshooting**
+
+### **Erro de Conexão MongoDB**
+- Verifique se a string de conexão está correta
+- Confirme se o IP está liberado no MongoDB Atlas
+- Verifique se o usuário tem permissões
+
+### **Erro CORS**
+- Confirme se `CORS_ORIGIN` está configurado corretamente
+- Verifique se o frontend está usando a URL correta
+
+### **Rate Limit**
+- Ajuste `RATE_LIMIT_MAX_REQUESTS` se necessário
+- Verifique se não há muitas requisições simultâneas
+
+## 📞 **Suporte**
+Para suporte técnico, entre em contato com a equipe de desenvolvimento VeloHub.
+
+---
+**Versão:** 3.1.0  
+**Data:** 2024-12-19  
+**Autor:** VeloHub Development Team  
+**URL:** https://back-console.vercel.app
