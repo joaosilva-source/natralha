@@ -8,21 +8,28 @@ Erro 500: `FUNCTION_INVOCATION_FAILED` no Vercel.
 
 ## ✅ Soluções Aplicadas
 
-### 1. Corrigido `vercel.json`
+### 1. **PROBLEMA PRINCIPAL RESOLVIDO:** `index.js` movido
+
+O arquivo `index.js` na raiz continha código de backend (Express + Baileys) e o Vercel estava tentando executá-lo como serverless function, causando o erro 500.
+
+**Solução:** Arquivo movido para `backend/index-baileys.js`
+
+### 2. Corrigido `vercel.json`
 
 O arquivo foi atualizado para a sintaxe correta do Vercel v2:
 - Removido `builds` (não é mais necessário)
 - Usado `buildCommand` e `outputDirectory` diretamente
 - Usado `rewrites` ao invés de `routes` para SPA
 
-### 2. Criado `.vercelignore`
+### 3. Criado `.vercelignore`
 
 Arquivo criado para ignorar:
 - Pasta `backend/` (não deve ser deployada)
+- Arquivo `index.js` (já movido, mas garantindo que não seja processado)
 - Arquivos de configuração desnecessários
 - Scripts de teste
 
-### 3. Variável de Ambiente no Vercel
+### 4. Variável de Ambiente no Vercel
 
 **IMPORTANTE:** Configure no Vercel (Settings > Environment Variables):
 
@@ -53,12 +60,14 @@ REACT_APP_API_URL=https://velohub-backend.onrender.com
 
 ---
 
-## 💡 Possíveis Causas do Erro 500
+## 💡 Causa do Erro 500
 
+**CAUSA PRINCIPAL:** O arquivo `index.js` na raiz do projeto continha código de backend (Express + Baileys) e o Vercel estava tentando executá-lo como uma serverless function, causando o erro 500.
+
+**Outras possíveis causas:**
 1. **Variável de ambiente faltando:** `REACT_APP_API_URL` não configurada
 2. **Build falhando:** Dependências não instaladas
-3. **Arquivo na raiz:** `index.js` na raiz pode estar sendo interpretado como serverless function
-4. **Pasta backend:** Pode estar tentando fazer deploy da pasta backend
+3. **Pasta backend:** Pode estar tentando fazer deploy da pasta backend
 
 ---
 
