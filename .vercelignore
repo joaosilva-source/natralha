@@ -1,0 +1,21 @@
+# Arquivos e pastas a ignorar no Vercel
+backend/
+*.md
+.env
+env
+node_modules/
+.git/
+.cursor/
+*.log
+*.tmp
+*.temp
+scripts/
+test-*.js
+temp_*.js
+*.bat
+*.ps1
+Dockerfile*
+cloudbuild.yaml
+app.yaml
+render.yaml
+railway.json
