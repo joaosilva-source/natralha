@@ -19,3 +19,5 @@ cloudbuild.yaml
 app.yaml
 render.yaml
 railway.json
+index.js
+api/
