@@ -144,6 +144,8 @@ app.use(cors({
     'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
     process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
     /\.onrender\.com$/, // Render.com (qualquer subdomínio)
+    /\.vercel\.app$/, // Vercel (qualquer subdomínio)
+    /\.vercel\.sh$/, // Vercel preview deployments
     'http://localhost:8080', // Frontend padrão (regra estabelecida)
     'http://localhost:3000', // Compatibilidade
     'http://localhost:5000',  // Compatibilidade

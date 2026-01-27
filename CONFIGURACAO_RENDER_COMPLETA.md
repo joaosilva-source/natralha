@@ -117,7 +117,7 @@ OPENAI_API_KEY=sk-sua-chave-openai-aqui
 #### Google Gemini (Recomendado - IA Primária)
 
 ```env
-GEMINI_API_KEY=AIzaSy-sua-chave-gemini-aqui
+GEMINI_API_KEY=AIzaSy-s;ua-chave-gemini-aqui
 ```
 
 **Como obter:**
@@ -164,13 +164,16 @@ CHATBOT_SPREADSHEET_ID=1tnWusrOW-UXHFM8GT3o0Du93QDwv5G3Ylvgebof9wfQ
 ### 3.7 CORS e Origins
 
 ```env
-CORS_ORIGIN=https://seu-frontend.com
+CORS_ORIGIN=https://seu-frontend.vercel.app
 ```
 
 **Exemplos:**
+- Frontend Vercel: `https://velohub-xxxxx.vercel.app`
 - Frontend VeloHub: `https://velohub-278491073220.us-east1.run.app`
 - Domínio customizado: `https://app.velohub.velotax.com.br`
 - Localhost (desenvolvimento): `http://localhost:8080`
+
+**Nota:** O código já aceita automaticamente domínios `.vercel.app` e `.vercel.sh` via regex. Você só precisa configurar `CORS_ORIGIN` se usar domínio customizado.
 
 ---
 
@@ -496,33 +499,35 @@ Configure alertas em **Settings** > **Alerts**:
 
 ---
 
-## 🔄 Atualizar CORS Após Deploy
+## 🔄 Configurar CORS para Vercel
 
-Após obter a URL do Render, atualize o CORS no código:
+### Opção 1: Automático (Recomendado)
 
-1. Edite `backend/server.js`
-2. Adicione a URL do Render na lista de origins:
+O código já está configurado para aceitar automaticamente domínios do Vercel:
+- `*.vercel.app` - Deployments de produção
+- `*.vercel.sh` - Preview deployments
 
+**Não é necessário fazer nada!** O frontend no Vercel funcionará automaticamente.
+
+### Opção 2: Domínio Customizado
+
+Se usar domínio customizado no Vercel, adicione no Render:
+
+```env
+CORS_ORIGIN=https://app.velohub.com
+```
+
+Ou atualize o código `backend/server.js` para incluir seu domínio específico.
+
+### Verificar CORS
+
+O arquivo `backend/server.js` já contém:
 ```javascript
-app.use(cors({
-  origin: [
-    'https://velohub-backend.onrender.com', // Render
-    'https://app.velohub.velotax.com.br',
-    'http://localhost:8080',
-    // ... outros
-  ],
-  credentials: true
-}));
+/\.vercel\.app$/, // Vercel (qualquer subdomínio)
+/\.vercel\.sh$/, // Vercel preview deployments
 ```
 
-3. Faça commit e push:
-```bash
-git add backend/server.js
-git commit -m "feat: Adicionar CORS para Render"
-git push natralha main
-```
-
-4. O Render fará deploy automático
+Isso significa que qualquer domínio do Vercel será aceito automaticamente!
 
 ---
 
