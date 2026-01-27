@@ -284,18 +284,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Test connection endpoint
+// Test connection endpoint - Versão simplificada (não requer MongoDB)
 app.get('/api/test', async (req, res) => {
   try {
-    if (!client) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'MongoDB não configurado',
-        message: 'Servidor funcionando, mas MongoDB não disponível'
-      });
-    }
-    await connectToMongo();
-    res.json({ success: true, message: 'Conexão com MongoDB OK!' });
+    res.json({ 
+      success: true, 
+      message: 'Console de Conteúdo VeloHub API v4.2.0',
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      monitor: '/monitor.html'
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -3631,10 +3629,32 @@ try {
   console.error('Detalhes do erro:', error);
 }
 
+// Middleware 404 para rotas de API não encontradas (ANTES do catch-all)
+// IMPORTANTE: Esta rota deve ser a ÚLTIMA rota de API, depois de todas as outras
+app.use('/api/*', (req, res, next) => {
+  // Se a resposta já foi enviada, não fazer nada
+  if (res.headersSent) {
+    return next();
+  }
+  // Retornar 404 apenas se nenhuma rota anterior foi correspondida
+  res.status(404).json({
+    success: false,
+    error: 'Rota não encontrada',
+    path: req.path,
+    method: req.method,
+    message: 'A rota solicitada não existe nesta API'
+  });
+});
+
 // Servir arquivos estáticos do frontend (DEPOIS das rotas da API)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rota para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
-app.get('*', (req, res) => {
+// IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
+app.get('*', (req, res, next) => {
+  // Se for uma rota de API, não servir o index.html
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

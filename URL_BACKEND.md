@@ -24,7 +24,12 @@ REACT_APP_API_URL=https://natralha.onrender.com
 
 ### 2. Teste Direto
 
-**Health Check:**
+**Health Check (Recomendado):**
+```
+https://natralha.onrender.com/api/health
+```
+
+**Test Endpoint:**
 ```
 https://natralha.onrender.com/api/test
 ```
@@ -32,6 +37,7 @@ https://natralha.onrender.com/api/test
 **Deve retornar:**
 ```json
 {
+  "success": true,
   "message": "Console de Conteúdo VeloHub API v4.2.0",
   "status": "OK",
   "timestamp": "...",
@@ -43,7 +49,8 @@ https://natralha.onrender.com/api/test
 
 ### 3. Endpoints Disponíveis
 
-- **Health Check:** `https://natralha.onrender.com/api/test`
+- **Health Check:** `https://natralha.onrender.com/api/health`
+- **Test:** `https://natralha.onrender.com/api/test`
 - **Monitor:** `https://natralha.onrender.com/monitor.html`
 - **Relatórios WhatsApp:** `https://natralha.onrender.com/api/escalacoes/reports/*`
 

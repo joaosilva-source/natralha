@@ -61,7 +61,12 @@ Após o redeploy, teste:
 
 ### Testar Backend Diretamente
 
-Abra no navegador:
+**Opção 1: Health Check (Recomendado)**
+```
+https://natralha.onrender.com/api/health
+```
+
+**Opção 2: Test Endpoint**
 ```
 https://natralha.onrender.com/api/test
 ```
@@ -69,6 +74,7 @@ https://natralha.onrender.com/api/test
 **Deve retornar:**
 ```json
 {
+  "success": true,
   "message": "Console de Conteúdo VeloHub API v4.2.0",
   "status": "OK",
   "timestamp": "...",
