@@ -232,7 +232,6 @@ const formatArticleContent = (content) => {
 
 // MongoDB Connection
 // Aceita tanto MONGODB_URI (padrão) quanto MONGO_ENV (legado)
-const config = require('./config');
 const uri = config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI;
 
 console.log('🔍 Verificando configuração MongoDB...');
