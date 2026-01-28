@@ -1,5 +1,33 @@
 # DEPLOY LOG - Console de Conteúdo VeloHub
 
+## GitHub Push - 2026-01-28
+
+**Data/Hora:** 2026-01-28  
+**Tipo:** GitHub Push  
+**Versão:** v2.1.0 (render.yaml)  
+**Repositório:** joaosilva-source/natralha  
+**Branch:** main  
+
+### Descrição:
+Correção crítica dos caminhos rootDir no render.yaml para deploy no Render:
+- Corrigido rootDir do backend de "Back" para "backend"
+- Corrigido rootDir do frontend de "Back/front" para "front"
+- Render agora encontra os diretórios corretos durante o deploy
+
+### Arquivos Modificados:
+- `render.yaml` (v2.0.0 → v2.1.0) - Caminhos rootDir corrigidos
+
+### Problema Resolvido:
+- ❌ Erro: "O diretório raiz 'front' não existe"
+- ❌ Erro: "local inválido: resolve : lstat /opt/render/project/src/Back: nenhum arquivo ou diretório encontrado"
+- ✅ Caminhos corrigidos para corresponder à estrutura real do projeto
+- ✅ Deploy no Render deve funcionar corretamente agora
+
+### Commit Hash: 965c4cd
+### Status: ✅ Push Realizado com Sucesso
+
+---
+
 ## GitHub Push - 2025-01-30
 
 **Data/Hora:** 2025-01-30  
