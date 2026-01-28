@@ -1,0 +1,7 @@
+streamlit
+pandas
+plotly
+wordcloud
+google-generativeai
+sqlalchemy
+matplotlib
