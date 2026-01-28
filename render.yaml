@@ -28,7 +28,7 @@ services:
     plan: starter
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm run serve
-    rootDir: front
+    rootDir: Back/front
     envVars:
       - key: NODE_ENV
         value: production
