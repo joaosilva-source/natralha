@@ -3675,7 +3675,7 @@ app.use('/api/*', (req, res, next) => {
 });
 
 // Servir arquivos estáticos do frontend (DEPOIS das rotas da API)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // Rota para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
 // IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
