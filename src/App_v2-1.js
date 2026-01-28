@@ -1,10 +1,6 @@
 /**
  * VeloHub V3 - Main Application Component
-<<<<<<< HEAD
- * VERSION: v2.1.83 | DATE: 2025-01-31 | AUTHOR: VeloHub Development Team
-=======
  * VERSION: v2.1.88 | DATE: 2025-01-30 | AUTHOR: VeloHub Development Team
->>>>>>> 8e19af3c27617794c994e61507b8a4ec5b142f5a
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -834,24 +830,18 @@ const extractYouTubeId = (url) => {
   return null;
 };
 
-const HomePage = ({ setCriticalNews, setShowHistoryModal, setVeloNews, veloNews }) => {
-=======
 const HomePage = ({ setCriticalNews, setShowHistoryModal, setVeloNews, veloNews, setRefreshAcknowledgedNews, setAcknowledgedNewsIds: setParentAcknowledgedNewsIds, setUpdateAcknowledgedNewsCallback }) => {
->>>>>>> 8e19af3c27617794c994e61507b8a4ec5b142f5a
     const [selectedNews, setSelectedNews] = useState(null);
     const [selectedArticle, setSelectedArticle] = useState(null);
     const [recentItems, setRecentItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(Date.now());
     const [lastCriticalNewsId, setLastCriticalNewsId] = useState(null);
-<<<<<<< HEAD
     const [expandedImage, setExpandedImage] = useState(null);
     const [expandedVideo, setExpandedVideo] = useState(null);
     const [showNewsAdmin, setShowNewsAdmin] = useState(false);
     const [newsToEdit, setNewsToEdit] = useState(null);
-=======
     const [acknowledgedNewsIds, setAcknowledgedNewsIds] = useState([]);
->>>>>>> 8e19af3c27617794c994e61507b8a4ec5b142f5a
     
     // Estados dos módulos - controlados pelo Console VeloHub
     const [moduleStatus, setModuleStatus] = useState({
