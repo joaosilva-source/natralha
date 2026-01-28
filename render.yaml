@@ -1,5 +1,5 @@
 # Render.com Configuration - VeloHub
-# VERSION: v2.0.0 | DATE: 2026-01-28 | AUTHOR: VeloHub Development Team
+# VERSION: v2.1.0 | DATE: 2026-01-28 | AUTHOR: VeloHub Development Team
 # Inclui Backend e Frontend
 
 services:
@@ -11,7 +11,7 @@ services:
     plan: starter
     buildCommand: npm install --legacy-peer-deps
     startCommand: npm start
-    rootDir: Back
+    rootDir: backend
     envVars:
       - key: NODE_ENV
         value: production
@@ -28,7 +28,7 @@ services:
     plan: starter
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm run serve
-    rootDir: Back/front
+    rootDir: front
     envVars:
       - key: NODE_ENV
         value: production
