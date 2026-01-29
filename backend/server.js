@@ -138,11 +138,12 @@ const app = express();
 // REGRA: Backend porta 8090 na rede local | Frontend porta 8080
 const PORT = process.env.PORT || 8090;
 
-// Middleware CORS
+// Middleware CORS - CONFIGURAÇÃO PRIMEIRO, ANTES DE QUALQUER OUTRO MIDDLEWARE
 const allowedOrigins = [
   'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
   process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
-  'https://natralha-rrm3.onrender.com', // Frontend Render.com (explicito)
+  'https://natralha-rrm3.onrender.com', // Frontend Render.com (sem barra)
+  'https://natralha-rrm3.onrender.com/', // Frontend Render.com (com barra)
   'https://velohub-backend.onrender.com', // Backend Render.com (para requisições internas)
   'http://localhost:8080', // Frontend padrão (regra estabelecida)
   'http://localhost:3000', // Compatibilidade
@@ -161,21 +162,24 @@ const corsOptions = {
     console.log(`🔍 CORS: Verificando origem: ${origin}`);
     console.log(`🔍 CORS: Origens permitidas:`, allowedOrigins);
     
-    // Verificar origens exatas
-    if (allowedOrigins.includes(origin)) {
+    // Normalizar origem removendo barra final para comparação
+    const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+    
+    // Verificar origens exatas (com e sem barra)
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes(origin + '/')) {
       console.log(`✅ CORS: Origem permitida (exata): ${origin}`);
       return callback(null, true);
     }
     
-    // Verificar padrões regex para Render.com
-    const renderPattern = /^https:\/\/.*\.onrender\.com$/;
+    // Verificar padrões regex para Render.com (aceita com ou sem barra)
+    const renderPattern = /^https:\/\/.*\.onrender\.com\/?$/;
     if (renderPattern.test(origin)) {
       console.log(`✅ CORS: Origem permitida (Render.com): ${origin}`);
       return callback(null, true);
     }
     
     // Verificar padrões regex para Vercel
-    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)$/;
+    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)\/?$/;
     if (vercelPattern.test(origin)) {
       console.log(`✅ CORS: Origem permitida (Vercel): ${origin}`);
       return callback(null, true);
@@ -195,16 +199,16 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Middleware de diagnóstico CORS - logar todas as requisições antes do CORS
+// CRÍTICO: Aplicar CORS COMO PRIMEIRO MIDDLEWARE, antes de qualquer outro app.use()
+// Isso garante que requisições OPTIONS (preflight) sejam tratadas corretamente
+app.use(cors(corsOptions));
+
+// Middleware de diagnóstico CORS - logar todas as requisições após o CORS
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   console.log(`🔍 [CORS Diagnóstico] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
   next();
 });
-
-// IMPORTANTE: Aplicar CORS PRIMEIRO, antes de qualquer outra coisa
-// O middleware CORS deve ser uma das primeiras linhas para funcionar corretamente com Preflight (OPTIONS)
-app.use(cors(corsOptions));
 
 // Rota de teste rápido
 app.get('/debug-test', (req, res) => {
