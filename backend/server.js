@@ -198,6 +198,29 @@ const corsOptions = {
 // O middleware CORS deve ser uma das primeiras linhas para funcionar corretamente com Preflight (OPTIONS)
 app.use(cors(corsOptions));
 
+// Rota de teste rápido para verificar se o servidor está vivo e alcançável
+app.get('/debug-test', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 [Debug Test] Requisição recebida - Origin: ${origin || 'sem origem'}`);
+  
+  // Adicionar headers CORS manualmente para garantir
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  res.json({
+    success: true,
+    message: 'O servidor está vivo e alcançável!',
+    timestamp: new Date().toISOString(),
+    origin: origin || 'sem origem',
+    corsHeaders: {
+      'Access-Control-Allow-Origin': origin || 'não aplicado',
+      'Access-Control-Allow-Credentials': origin ? 'true' : 'não aplicado'
+    }
+  });
+});
+
 // Tratamento explícito de OPTIONS como fallback (caso o middleware cors não trate)
 // Este handler só será executado se o middleware cors não tratar a requisição OPTIONS
 app.options('*', (req, res) => {
