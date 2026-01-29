@@ -144,6 +144,8 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
   'https://natralha-rrm3.onrender.com', // Frontend Render.com (sem barra)
   'https://natralha-rrm3.onrender.com/', // Frontend Render.com (com barra)
+  'https://natralha.onrender.com', // Frontend Render.com alternativo (sem barra)
+  'https://natralha.onrender.com/', // Frontend Render.com alternativo (com barra)
   'https://velohub-backend.onrender.com', // Backend Render.com (para requisições internas)
   'http://localhost:8080', // Frontend padrão (regra estabelecida)
   'http://localhost:3000', // Compatibilidade
@@ -206,30 +208,56 @@ app.use(cors(corsOptions));
 // Handler explícito para OPTIONS (preflight) - garantir headers CORS mesmo se middleware cors falhar
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log(`🔍 [OPTIONS Handler] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  const referer = req.headers.referer;
+  
+  console.log(`🔍 [OPTIONS Handler] ${req.method} ${req.path}`);
+  console.log(`   - Origin: ${origin || 'sem origem'}`);
+  console.log(`   - Referer: ${referer || 'sem referer'}`);
+  
+  let originToUse = origin;
+  
+  // Se não há origin, tentar inferir do referer
+  if (!origin && referer) {
+    try {
+      const refererUrl = new URL(referer);
+      originToUse = refererUrl.origin;
+      console.log(`🔍 [OPTIONS Handler] Origem inferida do referer: ${originToUse}`);
+    } catch (e) {
+      console.log(`⚠️ [OPTIONS Handler] Erro ao inferir origem do referer: ${e.message}`);
+    }
+  }
+  
+  // Se ainda não há origem, usar origem padrão
+  if (!originToUse) {
+    originToUse = 'https://natralha-rrm3.onrender.com';
+    console.log(`⚠️ [OPTIONS Handler] Usando origem padrão: ${originToUse}`);
+  }
   
   // Verificar se a origem é permitida
-  const normalizedOrigin = origin && origin.endsWith('/') ? origin.slice(0, -1) : origin;
-  const isAllowed = !origin || 
-    allowedOrigins.includes(origin) || 
+  const normalizedOrigin = originToUse && originToUse.endsWith('/') ? originToUse.slice(0, -1) : originToUse;
+  const isAllowed = 
+    allowedOrigins.includes(originToUse) || 
     allowedOrigins.includes(normalizedOrigin) ||
-    (origin && allowedOrigins.includes(origin + '/')) ||
-    (origin && /^https:\/\/.*\.onrender\.com\/?$/.test(origin)) ||
-    (origin && /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(origin));
+    (originToUse && allowedOrigins.includes(originToUse + '/')) ||
+    (originToUse && /^https:\/\/.*\.onrender\.com\/?$/.test(originToUse)) ||
+    (originToUse && /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(originToUse));
   
-  if (isAllowed && origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+  if (isAllowed && originToUse) {
+    res.header('Access-Control-Allow-Origin', originToUse);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     res.header('Access-Control-Max-Age', '86400');
-    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${origin}`);
-  } else if (!origin) {
-    // Requisições sem origem (health checks, etc)
-    res.header('Access-Control-Allow-Origin', '*');
+    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${originToUse}`);
+  } else {
+    // Fallback: usar origem padrão mesmo se não estiver na lista
+    const defaultOrigin = 'https://natralha-rrm3.onrender.com';
+    res.header('Access-Control-Allow-Origin', defaultOrigin);
+    res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     res.header('Access-Control-Max-Age', '86400');
+    console.log(`⚠️ [OPTIONS Handler] Origem não permitida, usando fallback: ${defaultOrigin}`);
   }
   
   return res.status(200).end();
