@@ -32,12 +32,12 @@ const addCorsHeaders = (req, res, next) => {
   next();
 };
 
-// Aplicar middleware CORS em todas as rotas
-router.use(addCorsHeaders);
-
-// Tratamento explícito de OPTIONS para todas as rotas
+// IMPORTANTE: Tratamento de OPTIONS DEVE SER O PRIMEIRO, antes de qualquer outra rota
+// Isso garante que requisições preflight sejam tratadas corretamente
 router.options('*', (req, res) => {
   const origin = req.headers.origin;
+  console.log(`🔍 [OPTIONS Preflight] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  
   const allowedOrigins = [
     'https://app.velohub.velotax.com.br',
     'https://natralha-rrm3.onrender.com',
@@ -62,8 +62,12 @@ router.options('*', (req, res) => {
     return res.status(200).end();
   }
   
+  console.log(`⚠️ [OPTIONS] Origem não permitida: ${origin}`);
   res.status(403).end();
 });
+
+// Aplicar middleware CORS em todas as rotas (depois do OPTIONS)
+router.use(addCorsHeaders);
 
 // Garantir que funções globais existam (no-op se não estiverem definidas)
 if (typeof global.emitTraffic !== 'function') {
@@ -97,8 +101,32 @@ const getGeminiService = () => {
 // POST /api/sociais/tabulation - Criar nova tabulação
 router.post('/tabulation', async (req, res) => {
   console.log('📥 [Route] POST /api/sociais/tabulation - Requisição recebida');
+  console.log('📥 [Route] Origin:', req.headers.origin);
   console.log('📥 [Route] Headers:', JSON.stringify(req.headers, null, 2));
   console.log('📥 [Route] Body recebido:', JSON.stringify(req.body, null, 2));
+  
+  // Garantir headers CORS na resposta
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://app.velohub.velotax.com.br',
+    'https://natralha-rrm3.onrender.com',
+    'https://velohub-backend.onrender.com',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5000'
+  ];
+  
+  const isAllowed = !origin || 
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
+    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+  
+  if (isAllowed && origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  }
   
   try {
     // Garantir que o banco está conectado antes de processar

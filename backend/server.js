@@ -195,9 +195,10 @@ const corsOptions = {
 };
 
 // Tratamento explícito de OPTIONS antes do middleware CORS
+// IMPORTANTE: Este handler deve responder a TODAS as requisições OPTIONS
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log(`🔍 OPTIONS preflight: ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  console.log(`🔍 [Server] OPTIONS preflight: ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
   
   // Verificar se a origem é permitida
   const isAllowed = !origin || 
@@ -206,15 +207,20 @@ app.options('*', (req, res) => {
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
   if (isAllowed) {
+    // IMPORTANTE: Usar origin específica, não '*', quando credentials: true
     res.header('Access-Control-Allow-Origin', origin || '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400');
-    console.log(`✅ OPTIONS: Headers CORS enviados para origem: ${origin || 'sem origem'}`);
+    console.log(`✅ [Server] OPTIONS: Headers CORS enviados para origem: ${origin || 'sem origem'}`);
     return res.status(200).end();
   } else {
-    console.log(`⚠️ OPTIONS: Origem não permitida: ${origin}`);
+    console.log(`⚠️ [Server] OPTIONS: Origem não permitida: ${origin}`);
+    // Mesmo para origens não permitidas, retornar headers CORS para evitar erro no navegador
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     return res.status(403).end();
   }
 });
