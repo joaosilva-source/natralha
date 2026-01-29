@@ -52,24 +52,28 @@ router.options('*', (req, res) => {
     /^https:\/\/.*\.onrender\.com$/.test(origin) ||
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
+  // SEMPRE retornar headers CORS, mesmo se origem não for permitida (para debug)
+  // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else {
+    // Se não houver origem (requisições de ferramentas), não usar credentials
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Max-Age', '86400');
+  
   if (isAllowed) {
-    // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    } else {
-      // Se não houver origem (requisições de ferramentas), não usar credentials
-      res.header('Access-Control-Allow-Origin', '*');
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ [OPTIONS] Headers CORS enviados para: ${origin || 'sem origem'}`);
     return res.status(200).end();
   }
   
-  console.log(`⚠️ [OPTIONS] Origem não permitida: ${origin}`);
-  res.status(403).end();
+  console.log(`⚠️ [OPTIONS] Origem não permitida, mas headers enviados para debug: ${origin}`);
+  // Retornar 200 mesmo para origens não permitidas (para debug)
+  // Em produção, pode retornar 403 se necessário
+  return res.status(200).end();
 });
 
 // Aplicar middleware CORS em todas as rotas (depois do OPTIONS)

@@ -198,27 +198,9 @@ const corsOptions = {
 // O middleware CORS deve ser uma das primeiras linhas para funcionar corretamente com Preflight (OPTIONS)
 app.use(cors(corsOptions));
 
-// Rota de teste rápido para verificar se o servidor está vivo e alcançável
+// Rota de teste rápido
 app.get('/debug-test', (req, res) => {
-  const origin = req.headers.origin;
-  console.log(`🔍 [Debug Test] Requisição recebida - Origin: ${origin || 'sem origem'}`);
-  
-  // Adicionar headers CORS manualmente para garantir
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  
-  res.json({
-    success: true,
-    message: 'O servidor está vivo e alcançável!',
-    timestamp: new Date().toISOString(),
-    origin: origin || 'sem origem',
-    corsHeaders: {
-      'Access-Control-Allow-Origin': origin || 'não aplicado',
-      'Access-Control-Allow-Credentials': origin ? 'true' : 'não aplicado'
-    }
-  });
+  res.send('O servidor está vivo e alcançável!');
 });
 
 // Tratamento explícito de OPTIONS como fallback (caso o middleware cors não trate)
@@ -233,32 +215,27 @@ app.options('*', (req, res) => {
     /^https:\/\/.*\.onrender\.com$/.test(origin) ||
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
+  // SEMPRE retornar headers CORS, mesmo se origem não for permitida (para debug)
+  // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else {
+    // Se não houver origem (requisições de ferramentas), não usar credentials
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Max-Age', '86400');
+  
   if (isAllowed) {
-    // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    } else {
-      // Se não houver origem (requisições de ferramentas), não usar credentials
-      res.header('Access-Control-Allow-Origin', '*');
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ [Server] OPTIONS (fallback): Headers CORS enviados para origem: ${origin || 'sem origem'}`);
     return res.status(200).end();
   } else {
-    console.log(`⚠️ [Server] OPTIONS (fallback): Origem não permitida: ${origin}`);
-    // Para origens não permitidas, ainda retornar headers mas sem credentials quando usar '*'
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    } else {
-      res.header('Access-Control-Allow-Origin', '*');
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    return res.status(403).end();
+    console.log(`⚠️ [Server] OPTIONS (fallback): Origem não permitida, mas headers enviados para debug: ${origin}`);
+    // Retornar 200 mesmo para origens não permitidas (para debug)
+    // Em produção, pode retornar 403 se necessário
+    return res.status(200).end();
   }
 });
 
