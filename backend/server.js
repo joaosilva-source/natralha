@@ -222,6 +222,19 @@ app.options('*', (req, res) => {
 // Aplicar CORS PRIMEIRO, antes de qualquer outro middleware
 // O pacote cors já trata requisições OPTIONS automaticamente
 app.use(cors(corsOptions));
+
+// Middleware de logging para debug de requisições API
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`📥 [API Request] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  console.log(`📥 [API Request] Headers:`, {
+    origin: origin,
+    'user-agent': req.headers['user-agent'],
+    'content-type': req.headers['content-type']
+  });
+  next();
+});
+
 // Aumentar limite do body para suportar imagens/vídeos em base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -3730,6 +3743,12 @@ try {
 try {
   console.log('📦 Carregando rotas de Sociais...');
   const sociaisRouter = require('./routes/sociais');
+  
+  // Verificar se o router foi carregado corretamente
+  if (!sociaisRouter) {
+    throw new Error('Router de Sociais não foi carregado corretamente');
+  }
+  
   app.use('/api/sociais', sociaisRouter);
   console.log('✅ Rotas de Sociais registradas com sucesso!');
   console.log('📋 Rotas disponíveis:');
@@ -3737,7 +3756,22 @@ try {
   console.log('   - GET /api/sociais/tabulations');
   console.log('   - GET /api/sociais/dashboard/metrics');
   console.log('   - GET /api/sociais/dashboard/charts');
+  console.log('   - GET /api/sociais/rating/average');
   console.log('   - GET /api/sociais/feed');
+  
+  // Adicionar rota de teste para verificar se as rotas estão funcionando
+  app.get('/api/sociais/test', (req, res) => {
+    const origin = req.headers.origin;
+    if (origin && (allowedOrigins.includes(origin) || /^https:\/\/.*\.onrender\.com$/.test(origin))) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+    res.json({
+      success: true,
+      message: 'Rotas de Sociais estão funcionando',
+      timestamp: new Date().toISOString()
+    });
+  });
 } catch (error) {
   console.error('❌ Erro ao registrar rotas de Sociais:', error.message);
   console.error('Stack:', error.stack);
@@ -3751,13 +3785,40 @@ app.use('/api/*', (req, res, next) => {
   if (res.headersSent) {
     return next();
   }
+  
+  // Adicionar headers CORS mesmo em erros 404
+  const origin = req.headers.origin;
+  const isAllowed = !origin || 
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
+    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+  
+  if (isAllowed && origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  // Log para debug
+  console.log(`⚠️ [404] Rota não encontrada: ${req.method} ${req.path}`);
+  console.log(`⚠️ [404] Origin: ${origin || 'sem origem'}`);
+  console.log(`⚠️ [404] Headers:`, JSON.stringify(req.headers, null, 2));
+  
   // Retornar 404 apenas se nenhuma rota anterior foi correspondida
   res.status(404).json({
     success: false,
     error: 'Rota não encontrada',
     path: req.path,
     method: req.method,
-    message: 'A rota solicitada não existe nesta API'
+    message: 'A rota solicitada não existe nesta API',
+    availableRoutes: [
+      '/api/sociais/tabulation',
+      '/api/sociais/tabulations',
+      '/api/sociais/dashboard/metrics',
+      '/api/sociais/dashboard/charts',
+      '/api/sociais/rating/average',
+      '/api/test',
+      '/api/health'
+    ]
   });
 });
 

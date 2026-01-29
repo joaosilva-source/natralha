@@ -3,6 +3,68 @@ const express = require('express');
 const router = express.Router();
 const SociaisMetricas = require('../models/SociaisMetricas');
 
+// Middleware para adicionar headers CORS em todas as rotas
+const addCorsHeaders = (req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Lista de origens permitidas (mesma do server.js)
+  const allowedOrigins = [
+    'https://app.velohub.velotax.com.br',
+    'https://natralha-rrm3.onrender.com',
+    'https://velohub-backend.onrender.com',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5000'
+  ];
+  
+  const isAllowed = !origin || 
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
+    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+  
+  if (isAllowed && origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  }
+  
+  next();
+};
+
+// Aplicar middleware CORS em todas as rotas
+router.use(addCorsHeaders);
+
+// Tratamento explícito de OPTIONS para todas as rotas
+router.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://app.velohub.velotax.com.br',
+    'https://natralha-rrm3.onrender.com',
+    'https://velohub-backend.onrender.com',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5000'
+  ];
+  
+  const isAllowed = !origin || 
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
+    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+  
+  if (isAllowed) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    console.log(`✅ [OPTIONS] Headers CORS enviados para: ${origin || 'sem origem'}`);
+    return res.status(200).end();
+  }
+  
+  res.status(403).end();
+});
+
 // Garantir que funções globais existam (no-op se não estiverem definidas)
 if (typeof global.emitTraffic !== 'function') {
   global.emitTraffic = () => {};
@@ -139,6 +201,10 @@ router.post('/tabulation', async (req, res) => {
 // GET /api/sociais/tabulations - Listar tabulações com filtros
 router.get('/tabulations', async (req, res) => {
   try {
+    console.log('📊 [Route] GET /api/sociais/tabulations - Requisição recebida');
+    console.log('📊 [Route] Origin:', req.headers.origin);
+    console.log('📊 [Route] Query params:', req.query);
+    
     global.emitTraffic('Sociais', 'received', 'Entrada recebida - GET /api/sociais/tabulations');
     global.emitLog('info', 'GET /api/sociais/tabulations - Listando tabulações');
     
@@ -193,6 +259,10 @@ router.get('/tabulations', async (req, res) => {
 // GET /api/sociais/dashboard/metrics - Métricas do dashboard
 router.get('/dashboard/metrics', async (req, res) => {
   try {
+    console.log('📊 [Route] GET /api/sociais/dashboard/metrics - Requisição recebida');
+    console.log('📊 [Route] Origin:', req.headers.origin);
+    console.log('📊 [Route] Query params:', req.query);
+    
     global.emitTraffic('Sociais', 'received', 'Entrada recebida - GET /api/sociais/dashboard/metrics');
     global.emitLog('info', 'GET /api/sociais/dashboard/metrics - Obtendo métricas');
     
@@ -263,6 +333,10 @@ router.get('/dashboard/metrics', async (req, res) => {
 // GET /api/sociais/dashboard/charts - Dados para gráficos
 router.get('/dashboard/charts', async (req, res) => {
   try {
+    console.log('📊 [Route] GET /api/sociais/dashboard/charts - Requisição recebida');
+    console.log('📊 [Route] Origin:', req.headers.origin);
+    console.log('📊 [Route] Query params:', req.query);
+    
     global.emitTraffic('Sociais', 'received', 'Entrada recebida - GET /api/sociais/dashboard/charts');
     global.emitLog('info', 'GET /api/sociais/dashboard/charts - Obtendo dados para gráficos');
     
@@ -333,6 +407,10 @@ router.get('/dashboard/charts', async (req, res) => {
 // GET /api/sociais/rating/average - Média de ratings
 router.get('/rating/average', async (req, res) => {
   try {
+    console.log('📊 [Route] GET /api/sociais/rating/average - Requisição recebida');
+    console.log('📊 [Route] Origin:', req.headers.origin);
+    console.log('📊 [Route] Query params:', req.query);
+    
     global.emitTraffic('Sociais', 'received', 'Entrada recebida - GET /api/sociais/rating/average');
     global.emitLog('info', 'GET /api/sociais/rating/average - Obtendo média de ratings');
     
