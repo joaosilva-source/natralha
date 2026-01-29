@@ -53,10 +53,16 @@ router.options('*', (req, res) => {
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
   if (isAllowed) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
+    // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else {
+      // Se não houver origem (requisições de ferramentas), não usar credentials
+      res.header('Access-Control-Allow-Origin', '*');
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ [OPTIONS] Headers CORS enviados para: ${origin || 'sem origem'}`);
     return res.status(200).end();

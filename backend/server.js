@@ -207,18 +207,28 @@ app.options('*', (req, res) => {
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
   if (isAllowed) {
-    // IMPORTANTE: Usar origin específica, não '*', quando credentials: true
-    res.header('Access-Control-Allow-Origin', origin || '*');
+    // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else {
+      // Se não houver origem (requisições de ferramentas), não usar credentials
+      res.header('Access-Control-Allow-Origin', '*');
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ [Server] OPTIONS: Headers CORS enviados para origem: ${origin || 'sem origem'}`);
     return res.status(200).end();
   } else {
     console.log(`⚠️ [Server] OPTIONS: Origem não permitida: ${origin}`);
-    // Mesmo para origens não permitidas, retornar headers CORS para evitar erro no navegador
-    res.header('Access-Control-Allow-Origin', origin || '*');
+    // Para origens não permitidas, ainda retornar headers mas sem credentials quando usar '*'
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else {
+      res.header('Access-Control-Allow-Origin', '*');
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     return res.status(403).end();
