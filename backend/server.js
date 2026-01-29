@@ -203,6 +203,38 @@ const corsOptions = {
 // Isso garante que requisições OPTIONS (preflight) sejam tratadas corretamente
 app.use(cors(corsOptions));
 
+// Handler explícito para OPTIONS (preflight) - garantir headers CORS mesmo se middleware cors falhar
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 [OPTIONS Handler] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  
+  // Verificar se a origem é permitida
+  const normalizedOrigin = origin && origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  const isAllowed = !origin || 
+    allowedOrigins.includes(origin) || 
+    allowedOrigins.includes(normalizedOrigin) ||
+    (origin && allowedOrigins.includes(origin + '/')) ||
+    (origin && /^https:\/\/.*\.onrender\.com\/?$/.test(origin)) ||
+    (origin && /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(origin));
+  
+  if (isAllowed && origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
+    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${origin}`);
+  } else if (!origin) {
+    // Requisições sem origem (health checks, etc)
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
+  }
+  
+  return res.status(200).end();
+});
+
 // Middleware de diagnóstico CORS - logar todas as requisições após o CORS
 app.use((req, res, next) => {
   const origin = req.headers.origin;
