@@ -190,16 +190,19 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400, // 24 horas
-  preflightContinue: true, // Permitir que nosso handler OPTIONS explícito trate o preflight
+  preflightContinue: false, // Deixar o middleware cors tratar OPTIONS automaticamente
   optionsSuccessStatus: 200
 };
 
-// Tratamento explícito de OPTIONS ANTES do middleware CORS
-// IMPORTANTE: Este handler deve responder a TODAS as requisições OPTIONS
-// Deve ser executado ANTES do middleware cors() para ter prioridade
-app.options('*', (req, res, next) => {
+// IMPORTANTE: Aplicar CORS PRIMEIRO, antes de qualquer outra coisa
+// O middleware CORS deve ser uma das primeiras linhas para funcionar corretamente com Preflight (OPTIONS)
+app.use(cors(corsOptions));
+
+// Tratamento explícito de OPTIONS como fallback (caso o middleware cors não trate)
+// Este handler só será executado se o middleware cors não tratar a requisição OPTIONS
+app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log(`🔍 [Server] OPTIONS preflight: ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  console.log(`🔍 [Server] OPTIONS preflight (fallback): ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
   
   // Verificar se a origem é permitida (mesma lógica do corsOptions)
   const isAllowed = !origin || 
@@ -219,10 +222,10 @@ app.options('*', (req, res, next) => {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     res.header('Access-Control-Max-Age', '86400');
-    console.log(`✅ [Server] OPTIONS: Headers CORS enviados para origem: ${origin || 'sem origem'}`);
+    console.log(`✅ [Server] OPTIONS (fallback): Headers CORS enviados para origem: ${origin || 'sem origem'}`);
     return res.status(200).end();
   } else {
-    console.log(`⚠️ [Server] OPTIONS: Origem não permitida: ${origin}`);
+    console.log(`⚠️ [Server] OPTIONS (fallback): Origem não permitida: ${origin}`);
     // Para origens não permitidas, ainda retornar headers mas sem credentials quando usar '*'
     if (origin) {
       res.header('Access-Control-Allow-Origin', origin);
@@ -235,10 +238,6 @@ app.options('*', (req, res, next) => {
     return res.status(403).end();
   }
 });
-
-// Aplicar CORS PRIMEIRO, antes de qualquer outro middleware
-// O pacote cors já trata requisições OPTIONS automaticamente
-app.use(cors(corsOptions));
 
 // Middleware de logging para debug de requisições API
 app.use('/api', (req, res, next) => {
