@@ -190,17 +190,18 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400, // 24 horas
-  preflightContinue: false,
+  preflightContinue: true, // Permitir que nosso handler OPTIONS explícito trate o preflight
   optionsSuccessStatus: 200
 };
 
-// Tratamento explícito de OPTIONS antes do middleware CORS
+// Tratamento explícito de OPTIONS ANTES do middleware CORS
 // IMPORTANTE: Este handler deve responder a TODAS as requisições OPTIONS
-app.options('*', (req, res) => {
+// Deve ser executado ANTES do middleware cors() para ter prioridade
+app.options('*', (req, res, next) => {
   const origin = req.headers.origin;
   console.log(`🔍 [Server] OPTIONS preflight: ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
   
-  // Verificar se a origem é permitida
+  // Verificar se a origem é permitida (mesma lógica do corsOptions)
   const isAllowed = !origin || 
     allowedOrigins.includes(origin) ||
     /^https:\/\/.*\.onrender\.com$/.test(origin) ||
