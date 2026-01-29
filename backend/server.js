@@ -191,31 +191,8 @@ const corsOptions = {
   maxAge: 86400 // 24 horas
 };
 
-// Tratamento explícito para requisições OPTIONS (preflight) - DEVE VIR ANTES DO CORS
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  console.log(`🔍 OPTIONS preflight: ${req.method} ${req.path} - Origin: ${origin}`);
-  
-  // Verificar se a origem é permitida
-  const isAllowed = !origin || 
-    allowedOrigins.includes(origin) ||
-    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
-    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
-  
-  if (isAllowed) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-    console.log(`✅ OPTIONS: Headers CORS enviados para origem: ${origin}`);
-    return res.status(200).end();
-  } else {
-    console.log(`⚠️ OPTIONS: Origem não permitida: ${origin}`);
-    return res.status(403).end();
-  }
-});
-
+// Aplicar CORS PRIMEIRO, antes de qualquer outro middleware
+// O pacote cors já trata requisições OPTIONS automaticamente
 app.use(cors(corsOptions));
 // Aumentar limite do body para suportar imagens/vídeos em base64
 app.use(express.json({ limit: '50mb' }));
