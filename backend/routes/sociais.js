@@ -3,6 +3,20 @@ const express = require('express');
 const router = express.Router();
 const SociaisMetricas = require('../models/SociaisMetricas');
 
+// Garantir que funções globais existam (no-op se não estiverem definidas)
+if (typeof global.emitTraffic !== 'function') {
+  global.emitTraffic = () => {};
+}
+if (typeof global.emitLog !== 'function') {
+  global.emitLog = () => {};
+}
+if (typeof global.emitJson !== 'function') {
+  global.emitJson = () => {};
+}
+if (typeof global.emitJsonInput !== 'function') {
+  global.emitJsonInput = () => {};
+}
+
 // Lazy require do geminiService para não bloquear startup se módulo não estiver disponível
 let geminiService = null;
 const getGeminiService = () => {
