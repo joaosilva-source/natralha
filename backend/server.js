@@ -3684,5 +3684,16 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  
+  // Verificar se o arquivo existe antes de tentar servi-lo
+  const indexPath = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Se não existir, retornar 404 (frontend está em serviço separado no Render)
+    res.status(404).json({ 
+      error: 'Not Found', 
+      message: 'Frontend não está disponível neste serviço. Acesse o serviço frontend separado.' 
+    });
+  }
 });
