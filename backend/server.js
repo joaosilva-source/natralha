@@ -138,21 +138,44 @@ const app = express();
 // REGRA: Backend porta 8090 na rede local | Frontend porta 8080
 const PORT = process.env.PORT || 8090;
 
-// Middleware
-app.use(cors({
-  origin: [
-    'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
-    process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
-    /\.onrender\.com$/, // Render.com (qualquer subdomínio)
-    /\.vercel\.app$/, // Vercel (qualquer subdomínio)
-    /\.vercel\.sh$/, // Vercel preview deployments
-    'http://localhost:8080', // Frontend padrão (regra estabelecida)
-    'http://localhost:3000', // Compatibilidade
-    'http://localhost:5000',  // Compatibilidade
-    'http://172.16.50.66:8080' // IP local da máquina
-  ],
-  credentials: true
-}));
+// Middleware CORS
+const allowedOrigins = [
+  'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
+  process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
+  'http://localhost:8080', // Frontend padrão (regra estabelecida)
+  'http://localhost:3000', // Compatibilidade
+  'http://localhost:5000',  // Compatibilidade
+  'http://172.16.50.66:8080' // IP local da máquina
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requisições sem origem (ex: mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Verificar origens exatas
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Verificar padrões regex
+    const renderPattern = /^https:\/\/.*\.onrender\.com$/;
+    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)$/;
+    
+    if (renderPattern.test(origin) || vercelPattern.test(origin)) {
+      return callback(null, true);
+    }
+    
+    // Log para debug
+    console.log(`⚠️ CORS: Origem bloqueada: ${origin}`);
+    callback(new Error('Não permitido pela política CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 // Aumentar limite do body para suportar imagens/vídeos em base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
