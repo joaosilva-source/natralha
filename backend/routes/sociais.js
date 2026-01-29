@@ -34,6 +34,10 @@ const getGeminiService = () => {
 
 // POST /api/sociais/tabulation - Criar nova tabulação
 router.post('/tabulation', async (req, res) => {
+  console.log('📥 [Route] POST /api/sociais/tabulation - Requisição recebida');
+  console.log('📥 [Route] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📥 [Route] Body recebido:', JSON.stringify(req.body, null, 2));
+  
   try {
     // Garantir que o banco está conectado antes de processar
     const { connectToDatabase } = require('../config/database');
@@ -55,6 +59,18 @@ router.post('/tabulation', async (req, res) => {
     global.emitLog('info', 'POST /api/sociais/tabulation - Criando nova tabulação');
     
     const { clientName, socialNetwork, messageText, rating, contactReason, sentiment, directedCenter, link, createdAt } = req.body;
+    
+    console.log('📥 [Route] Dados extraídos:', {
+      clientName,
+      socialNetwork,
+      messageText: messageText ? `${messageText.substring(0, 50)}...` : null,
+      rating,
+      contactReason,
+      sentiment,
+      directedCenter,
+      link,
+      createdAt
+    });
     
     if (!clientName || !socialNetwork || !messageText) {
       global.emitTraffic('Sociais', 'error', 'Dados obrigatórios ausentes');
@@ -81,32 +97,38 @@ router.post('/tabulation', async (req, res) => {
     global.emitJson(tabulationData);
 
     global.emitTraffic('Sociais', 'processing', 'Transmitindo para DB');
+    console.log('🔄 [Route] Chamando SociaisMetricas.create...');
     const result = await SociaisMetricas.create(tabulationData);
+    console.log('📥 [Route] Resultado de SociaisMetricas.create:', JSON.stringify(result, null, 2));
     
     if (result.success) {
       global.emitTraffic('Sociais', 'completed', 'Concluído - Tabulação criada com sucesso');
       global.emitLog('success', `POST /api/sociais/tabulation - Tabulação criada com sucesso`);
       
+      console.log('✅ [Route] Tabulação criada com sucesso, enviando resposta 201');
       // INBOUND: Resposta para o frontend
       global.emitJsonInput(result);
-      res.status(201).json(result);
+      return res.status(201).json(result);
     } else {
       global.emitTraffic('Sociais', 'error', result.error || 'Erro ao criar tabulação');
       global.emitLog('error', `POST /api/sociais/tabulation - ${result.error}`);
-      res.status(400).json(result);
+      console.error('❌ [Route] Erro ao criar tabulação:', result.error);
+      return res.status(400).json(result);
     }
   } catch (error) {
     global.emitTraffic('Sociais', 'error', 'Erro interno do servidor');
     global.emitLog('error', `POST /api/sociais/tabulation - Erro: ${error.message}`);
-    console.error('❌ Erro detalhado em /tabulation:', error);
-    console.error('❌ Stack trace:', error.stack);
+    console.error('❌ [Route] Erro detalhado em /tabulation:', error);
+    console.error('❌ [Route] Stack trace:', error.stack);
+    console.error('❌ [Route] Error name:', error.name);
+    console.error('❌ [Route] Error message:', error.message);
     
-    // Retornar mensagem de erro mais detalhada em desenvolvimento
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? `Erro interno do servidor: ${error.message}` 
-      : 'Erro interno do servidor';
+    // Retornar mensagem de erro mais detalhada
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Erro interno do servidor'
+      : `Erro interno do servidor: ${error.message}`;
     
-    res.status(400).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: errorMessage,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
