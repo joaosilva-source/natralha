@@ -159,6 +159,7 @@ const corsOptions = {
     }
     
     console.log(`🔍 CORS: Verificando origem: ${origin}`);
+    console.log(`🔍 CORS: Origens permitidas:`, allowedOrigins);
     
     // Verificar origens exatas
     if (allowedOrigins.includes(origin)) {
@@ -242,6 +243,20 @@ function parseTextContent(text) {
 app.use((err, req, res, next) => {
   console.error('❌ Erro no servidor:', err);
   if (!res.headersSent) {
+    // Garantir headers CORS mesmo em caso de erro
+    const origin = req.headers.origin;
+    if (origin) {
+      const isAllowed = !origin || 
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/.*\.onrender\.com$/.test(origin) ||
+        /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+      
+      if (isAllowed) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+      }
+    }
+    
     res.status(500).json({ 
       success: false, 
       error: 'Erro interno do servidor',
