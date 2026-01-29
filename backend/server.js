@@ -235,10 +235,46 @@ app.options('*', (req, res) => {
   return res.status(200).end();
 });
 
-// Middleware de diagnóstico CORS - logar todas as requisições após o CORS
+// Middleware para garantir headers CORS em TODAS as respostas
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  
+  // Log de diagnóstico
   console.log(`🔍 [CORS Diagnóstico] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  
+  // Garantir headers CORS em TODAS as respostas
+  if (origin) {
+    // Verificar se a origem é permitida
+    const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+    const isAllowed = 
+      allowedOrigins.includes(origin) || 
+      allowedOrigins.includes(normalizedOrigin) ||
+      allowedOrigins.includes(origin + '/') ||
+      /^https:\/\/.*\.onrender\.com\/?$/.test(origin) ||
+      /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(origin);
+    
+    if (isAllowed) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+      res.header('Access-Control-Max-Age', '86400');
+      console.log(`✅ [CORS Middleware] Headers CORS adicionados para: ${origin}`);
+    } else {
+      // Permitir temporariamente para debug
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+      console.log(`⚠️ [CORS Middleware] Origem não permitida, mas adicionando headers para debug: ${origin}`);
+    }
+  } else {
+    // Requisições sem origem - adicionar headers básicos
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  }
+  
   next();
 });
 
