@@ -151,10 +151,16 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     // Permitir requisições sem origem (ex: mobile apps, Postman)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ CORS: Requisição sem origem permitida');
+      return callback(null, true);
+    }
+    
+    console.log(`🔍 CORS: Verificando origem: ${origin}`);
     
     // Verificar origens exatas
     if (allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS: Origem permitida (exata): ${origin}`);
       return callback(null, true);
     }
     
@@ -162,7 +168,13 @@ const corsOptions = {
     const renderPattern = /^https:\/\/.*\.onrender\.com$/;
     const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)$/;
     
-    if (renderPattern.test(origin) || vercelPattern.test(origin)) {
+    if (renderPattern.test(origin)) {
+      console.log(`✅ CORS: Origem permitida (Render.com): ${origin}`);
+      return callback(null, true);
+    }
+    
+    if (vercelPattern.test(origin)) {
+      console.log(`✅ CORS: Origem permitida (Vercel): ${origin}`);
       return callback(null, true);
     }
     
@@ -172,8 +184,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 horas
 };
+
+// Tratamento explícito para requisições OPTIONS (preflight)
+app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 // Aumentar limite do body para suportar imagens/vídeos em base64
