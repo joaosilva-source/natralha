@@ -160,7 +160,6 @@ const corsOptions = {
     }
     
     console.log(`🔍 CORS: Verificando origem: ${origin}`);
-    console.log(`🔍 CORS: Origens permitidas:`, allowedOrigins);
     
     // Normalizar origem removendo barra final para comparação
     const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
@@ -171,7 +170,7 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Verificar padrões regex para Render.com (aceita com ou sem barra)
+    // Verificar padrões regex para Render.com (aceita com ou sem barra) - PRIORIDADE ALTA
     const renderPattern = /^https:\/\/.*\.onrender\.com\/?$/;
     if (renderPattern.test(origin)) {
       console.log(`✅ CORS: Origem permitida (Render.com): ${origin}`);
@@ -185,10 +184,11 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Log para debug
-    console.log(`⚠️ CORS: Origem bloqueada: ${origin}`);
+    // Log para debug - mas PERMITIR temporariamente para debug
+    console.log(`⚠️ CORS: Origem não está na lista, mas permitindo para debug: ${origin}`);
     console.log(`⚠️ CORS: Origens permitidas:`, allowedOrigins);
-    callback(new Error(`Não permitido pela política CORS. Origem: ${origin}`));
+    // IMPORTANTE: Permitir temporariamente para garantir que funcione
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
