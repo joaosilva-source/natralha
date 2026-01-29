@@ -152,7 +152,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Permitir requisições sem origem (ex: mobile apps, Postman)
+    // Permitir requisições sem origem (ex: mobile apps, Postman, requisições do mesmo servidor)
     if (!origin) {
       console.log('✅ CORS: Requisição sem origem permitida');
       return callback(null, true);
@@ -166,15 +166,15 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Verificar padrões regex
+    // Verificar padrões regex para Render.com
     const renderPattern = /^https:\/\/.*\.onrender\.com$/;
-    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)$/;
-    
     if (renderPattern.test(origin)) {
       console.log(`✅ CORS: Origem permitida (Render.com): ${origin}`);
       return callback(null, true);
     }
     
+    // Verificar padrões regex para Vercel
+    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)$/;
     if (vercelPattern.test(origin)) {
       console.log(`✅ CORS: Origem permitida (Vercel): ${origin}`);
       return callback(null, true);
@@ -182,17 +182,24 @@ const corsOptions = {
     
     // Log para debug
     console.log(`⚠️ CORS: Origem bloqueada: ${origin}`);
-    callback(new Error('Não permitido pela política CORS'));
+    console.log(`⚠️ CORS: Origens permitidas:`, allowedOrigins);
+    callback(new Error(`Não permitido pela política CORS. Origem: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400 // 24 horas
+  maxAge: 86400, // 24 horas
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 };
 
-// Tratamento explícito para requisições OPTIONS (preflight) - DEVE VIR ANTES DO CORS
-app.options('*', (req, res) => {
+// Aplicar CORS PRIMEIRO, antes de qualquer outro middleware
+// O pacote cors já trata requisições OPTIONS automaticamente
+app.use(cors(corsOptions));
+
+// Tratamento adicional para garantir que OPTIONS funcione corretamente
+app.options('*', cors(corsOptions), (req, res) => {
   const origin = req.headers.origin;
   console.log(`🔍 OPTIONS preflight recebido: ${req.method} ${req.path} - Origin: ${origin}`);
   
@@ -203,11 +210,11 @@ app.options('*', (req, res) => {
     /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
   
   if (isAllowed) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ OPTIONS: Headers CORS enviados para origem: ${origin || 'sem origem'}`);
     return res.status(200).end();
   } else {
@@ -215,10 +222,6 @@ app.options('*', (req, res) => {
     return res.status(403).end();
   }
 });
-
-// Aplicar CORS PRIMEIRO, antes de qualquer outro middleware
-// O pacote cors já trata requisições OPTIONS automaticamente
-app.use(cors(corsOptions));
 // Aumentar limite do body para suportar imagens/vídeos em base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
