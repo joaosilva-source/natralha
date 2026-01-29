@@ -194,6 +194,13 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Middleware de diagnóstico CORS - logar todas as requisições antes do CORS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 [CORS Diagnóstico] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  next();
+});
+
 // IMPORTANTE: Aplicar CORS PRIMEIRO, antes de qualquer outra coisa
 // O middleware CORS deve ser uma das primeiras linhas para funcionar corretamente com Preflight (OPTIONS)
 app.use(cors(corsOptions));
@@ -201,42 +208,6 @@ app.use(cors(corsOptions));
 // Rota de teste rápido
 app.get('/debug-test', (req, res) => {
   res.send('O servidor está vivo e alcançável!');
-});
-
-// Tratamento explícito de OPTIONS como fallback (caso o middleware cors não trate)
-// Este handler só será executado se o middleware cors não tratar a requisição OPTIONS
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  console.log(`🔍 [Server] OPTIONS preflight (fallback): ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
-  
-  // Verificar se a origem é permitida (mesma lógica do corsOptions)
-  const isAllowed = !origin || 
-    allowedOrigins.includes(origin) ||
-    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
-    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
-  
-  // SEMPRE retornar headers CORS, mesmo se origem não for permitida (para debug)
-  // IMPORTANTE: Quando credentials: true, SEMPRE usar origem específica, nunca '*'
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  } else {
-    // Se não houver origem (requisições de ferramentas), não usar credentials
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  if (isAllowed) {
-    console.log(`✅ [Server] OPTIONS (fallback): Headers CORS enviados para origem: ${origin || 'sem origem'}`);
-    return res.status(200).end();
-  } else {
-    console.log(`⚠️ [Server] OPTIONS (fallback): Origem não permitida, mas headers enviados para debug: ${origin}`);
-    // Retornar 200 mesmo para origens não permitidas (para debug)
-    // Em produção, pode retornar 403 se necessário
-    return res.status(200).end();
-  }
 });
 
 // Middleware de logging para debug de requisições API
