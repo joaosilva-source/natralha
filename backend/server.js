@@ -201,11 +201,18 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// CRÍTICO: Aplicar CORS COMO PRIMEIRO MIDDLEWARE, antes de qualquer outro app.use()
-// Isso garante que requisições OPTIONS (preflight) sejam tratadas corretamente
-app.use(cors(corsOptions));
+// Middleware de logging para capturar TODAS as requisições antes do tratamento CORS
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    console.log(`🚨 [PRE-OPTIONS] Capturando requisição OPTIONS: ${req.path}`);
+    console.log(`   - Origin: ${req.headers.origin || 'sem origem'}`);
+    console.log(`   - Referer: ${req.headers.referer || 'sem referer'}`);
+  }
+  next();
+});
 
-// Handler explícito para OPTIONS (preflight) - garantir headers CORS mesmo se middleware cors falhar
+// CRÍTICO: Handler OPTIONS deve ser registrado ANTES do middleware cors
+// para garantir que seja chamado primeiro e tenha controle total sobre preflight
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const referer = req.headers.referer;
@@ -262,6 +269,11 @@ app.options('*', (req, res) => {
   
   return res.status(200).end();
 });
+
+// CRÍTICO: Aplicar CORS middleware DEPOIS do handler OPTIONS
+// Isso garante que o handler OPTIONS tenha prioridade para preflight, mas o middleware cors
+// ainda trata outras requisições normalmente
+app.use(cors(corsOptions));
 
 // Middleware para garantir headers CORS em TODAS as respostas
 app.use((req, res, next) => {
