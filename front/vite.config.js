@@ -121,8 +121,9 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react-is']
   },
   build: {
-    minify: false,
-    sourcemap: true,
+    minify: 'esbuild', // Usar esbuild para minificação (mais rápido e usa menos memória)
+    sourcemap: false, // Desabilitar sourcemap em produção para economizar memória
+    chunkSizeWarningLimit: 1000,
     commonjsOptions: {
       transformMixedEsModules: true,
       include: [/react-plotly\.js/, /plotly\.js/, /node_modules/],
@@ -145,6 +146,10 @@ export default defineConfig({
             // MUI e Emotion (dependem de React)
             if (id.includes('@mui') || id.includes('@emotion')) {
               return 'mui-vendor'
+            }
+            // Outras dependências grandes
+            if (id.includes('xlsx') || id.includes('docx') || id.includes('jspdf')) {
+              return 'utils-vendor'
             }
           }
         }

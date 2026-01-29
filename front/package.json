@@ -7,6 +7,7 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "preview": "vite preview",
     "serve": "node server.js"
   },
