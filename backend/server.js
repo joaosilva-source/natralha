@@ -3698,6 +3698,24 @@ try {
   console.error('Detalhes do erro:', error);
 }
 
+// Registrar rotas de Sociais
+try {
+  console.log('📦 Carregando rotas de Sociais...');
+  const sociaisRouter = require('./routes/sociais');
+  app.use('/api/sociais', sociaisRouter);
+  console.log('✅ Rotas de Sociais registradas com sucesso!');
+  console.log('📋 Rotas disponíveis:');
+  console.log('   - POST /api/sociais/tabulation');
+  console.log('   - GET /api/sociais/tabulations');
+  console.log('   - GET /api/sociais/dashboard/metrics');
+  console.log('   - GET /api/sociais/dashboard/charts');
+  console.log('   - GET /api/sociais/feed');
+} catch (error) {
+  console.error('❌ Erro ao registrar rotas de Sociais:', error.message);
+  console.error('Stack:', error.stack);
+  console.error('Detalhes do erro:', error);
+}
+
 // Middleware 404 para rotas de API não encontradas (ANTES do catch-all)
 // IMPORTANTE: Esta rota deve ser a ÚLTIMA rota de API, depois de todas as outras
 app.use('/api/*', (req, res, next) => {
