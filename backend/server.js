@@ -139,285 +139,19 @@ const app = express();
 const PORT = process.env.PORT || 8090;
 
 // Middleware CORS - CONFIGURAÇÃO PRIMEIRO, ANTES DE QUALQUER OUTRO MIDDLEWARE
-const allowedOrigins = [
-  'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
-  process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
-  'https://natralha.onrender.com', // Frontend Render.com - URL PRIMÁRIA (sem barra)
-  'https://natralha.onrender.com/', // Frontend Render.com - URL PRIMÁRIA (com barra)
-  'https://natralha-rrm3.onrender.com', // Frontend Render.com alternativo (sem barra)
-  'https://natralha-rrm3.onrender.com/', // Frontend Render.com alternativo (com barra)
-  'https://velohub-backend.onrender.com', // Backend Render.com (para requisições internas)
-  'http://localhost:8080', // Frontend padrão (regra estabelecida)
-  'http://localhost:3000', // Compatibilidade
-  'http://localhost:5000',  // Compatibilidade
-  'http://172.16.50.66:8080' // IP local da máquina
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Permitir requisições sem origem (ex: mobile apps, Postman, requisições do mesmo servidor)
-    // IMPORTANTE: Sempre permitir para garantir que headers CORS sejam adicionados
-    // O middleware adicional garantirá que a origem correta seja usada
-    if (!origin) {
-      console.log('✅ CORS: Requisição sem origem - permitindo (middleware adicional adicionará origem específica)');
-      // Retornar true permite que o middleware cors adicione headers básicos
-      // O middleware adicional DEPOIS garantirá que a origem correta seja usada
-      return callback(null, true);
+// Aceita qualquer subdomínio do onrender.com usando expressão regular
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || /https:\/\/.*\.onrender\.com$/.test(origin) || /http:\/\/localhost/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS bloqueado para esta origem'));
     }
-    
-    console.log(`🔍 CORS: Verificando origem: ${origin}`);
-    
-    // Normalizar origem removendo barra final para comparação
-    const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
-    
-    // Verificar origens exatas (com e sem barra)
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes(origin + '/')) {
-      console.log(`✅ CORS: Origem permitida (exata): ${origin}`);
-      return callback(null, true);
-    }
-    
-    // Verificar padrões regex para Render.com (aceita com ou sem barra) - PRIORIDADE ALTA
-    const renderPattern = /^https:\/\/.*\.onrender\.com\/?$/;
-    if (renderPattern.test(origin)) {
-      console.log(`✅ CORS: Origem permitida (Render.com): ${origin}`);
-      return callback(null, true);
-    }
-    
-    // Verificar padrões regex para Vercel
-    const vercelPattern = /^https:\/\/.*\.vercel\.(app|sh)\/?$/;
-    if (vercelPattern.test(origin)) {
-      console.log(`✅ CORS: Origem permitida (Vercel): ${origin}`);
-      return callback(null, true);
-    }
-    
-    // Log para debug - mas PERMITIR temporariamente para debug
-    console.log(`⚠️ CORS: Origem não está na lista, mas permitindo para debug: ${origin}`);
-    console.log(`⚠️ CORS: Origens permitidas:`, allowedOrigins);
-    // IMPORTANTE: Permitir temporariamente para garantir que funcione
-    return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400, // 24 horas
-  preflightContinue: false, // Deixar o middleware cors tratar OPTIONS automaticamente
-  optionsSuccessStatus: 200 // Status 200 para requisições OPTIONS bem-sucedidas
-};
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
-// CRÍTICO: Aplicar CORS COMO PRIMEIRO MIDDLEWARE após express()
-// Isso garante que requisições OPTIONS (preflight) sejam tratadas corretamente
-app.use(cors(corsOptions));
-
-// Handler OPTIONS explícito como fallback - garante headers CORS mesmo se middleware cors falhar
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  const referer = req.headers.referer;
-  
-  console.log(`🔍 [OPTIONS Handler] ${req.method} ${req.path}`);
-  console.log(`   - Origin: ${origin || 'sem origem'}`);
-  console.log(`   - Referer: ${referer || 'sem referer'}`);
-  
-  let originToUse = origin;
-  
-  // Se não há origin, tentar inferir do referer
-  if (!origin && referer) {
-    try {
-      const refererUrl = new URL(referer);
-      originToUse = refererUrl.origin;
-      console.log(`🔍 [OPTIONS Handler] Origem inferida do referer: ${originToUse}`);
-    } catch (e) {
-      console.log(`⚠️ [OPTIONS Handler] Erro ao inferir origem do referer: ${e.message}`);
-    }
-  }
-  
-  // Se ainda não há origem, usar origem padrão (tentar natralha-rrm3 primeiro, depois natralha)
-  if (!originToUse) {
-    // Tentar inferir do host se disponível
-    const host = req.headers.host;
-    if (host && host.includes('natralha')) {
-      originToUse = `https://${host}`;
-      console.log(`🔍 [OPTIONS Handler] Tentando inferir origem do host: ${originToUse}`);
-    } else {
-      // Usar origem padrão baseada no frontend mais comum
-      originToUse = 'https://natralha-rrm3.onrender.com';
-      console.log(`⚠️ [OPTIONS Handler] Usando origem padrão: ${originToUse}`);
-    }
-  }
-  
-  // Verificar se a origem é permitida (sempre permitir .onrender.com)
-  const normalizedOrigin = originToUse && originToUse.endsWith('/') ? originToUse.slice(0, -1) : originToUse;
-  const isAllowed = 
-    allowedOrigins.includes(originToUse) || 
-    allowedOrigins.includes(normalizedOrigin) ||
-    (originToUse && allowedOrigins.includes(originToUse + '/')) ||
-    (originToUse && /^https:\/\/.*\.onrender\.com\/?$/.test(originToUse)) ||
-    (originToUse && /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(originToUse));
-  
-  // SEMPRE adicionar headers CORS para requisições OPTIONS
-  // Usar a origem da requisição se disponível, senão usar a inferida ou padrão
-  const finalOrigin = originToUse || 'https://natralha-rrm3.onrender.com';
-  
-  res.header('Access-Control-Allow-Origin', finalOrigin);
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Max-Age', '86400');
-  
-  if (isAllowed) {
-    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${finalOrigin} (permitida)`);
-  } else {
-    console.log(`⚠️ [OPTIONS Handler] Headers CORS enviados para: ${finalOrigin} (não na lista, mas permitindo)`);
-  }
-  
-  return res.status(200).end(); // Status 200 para OPTIONS
-});
-
-// Middleware de logging para capturar TODAS as requisições após CORS
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    console.log(`🚨 [PRE-OPTIONS] Capturando requisição OPTIONS: ${req.path}`);
-    console.log(`   - Origin: ${req.headers.origin || 'sem origem'}`);
-    console.log(`   - Referer: ${req.headers.referer || 'sem referer'}`);
-  }
-  next();
-});
-
-// Middleware para garantir headers CORS em TODAS as respostas
-// Este middleware SEMPRE sobrescreve os headers CORS para garantir origem específica
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const referer = req.headers.referer;
-  const host = req.headers.host;
-  
-  // Log de diagnóstico detalhado
-  console.log(`🔍 [CORS Diagnóstico] ${req.method} ${req.path}`);
-  console.log(`   - Origin: ${origin || 'sem origem'}`);
-  console.log(`   - Referer: ${referer || 'sem referer'}`);
-  console.log(`   - Host: ${host || 'sem host'}`);
-  console.log(`   - User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'sem user-agent'}`);
-  
-  // Interceptor para garantir headers CORS corretos antes de enviar resposta
-  // Este interceptor SEMPRE executa antes de enviar a resposta para garantir headers corretos
-  const originalEnd = res.end;
-  res.end = function(...args) {
-    // Garantir que headers CORS estejam sempre corretos antes de enviar
-    // Aplicar para TODAS as rotas da API e requisições OPTIONS
-    if (req.path.startsWith('/api/') || req.method === 'OPTIONS') {
-      let finalOrigin = origin;
-      let originSource = 'header origin';
-      
-      // Se não há origin, tentar inferir do referer
-      if (!finalOrigin && referer) {
-        try {
-          const refererUrl = new URL(referer);
-          finalOrigin = refererUrl.origin;
-          originSource = 'referer inferido';
-        } catch (e) {
-          // Ignorar erro
-        }
-      }
-      
-      // Se ainda não há origem, usar padrão (URL primária do Render)
-      if (!finalOrigin) {
-        finalOrigin = 'https://natralha.onrender.com';
-        originSource = 'origem padrão';
-      }
-      
-      // SEMPRE sobrescrever com origem específica (nunca usar *)
-      // Isso garante que mesmo se outros middlewares adicionaram headers incorretos, estes serão corretos
-      res.setHeader('Access-Control-Allow-Origin', finalOrigin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      res.setHeader('Access-Control-Max-Age', '86400');
-      
-      console.log(`🔧 [CORS Interceptor] ${req.method} ${req.path} - Headers CORS garantidos: ${finalOrigin} (${originSource})`);
-    }
-    
-    // Chamar método original
-    return originalEnd.apply(this, args);
-  };
-  
-  // Garantir headers CORS em TODAS as respostas
-  if (origin) {
-    // Verificar se a origem é permitida
-    const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
-    const isAllowed = 
-      allowedOrigins.includes(origin) || 
-      allowedOrigins.includes(normalizedOrigin) ||
-      allowedOrigins.includes(origin + '/') ||
-      /^https:\/\/.*\.onrender\.com\/?$/.test(origin) ||
-      /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(origin);
-    
-    if (isAllowed) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      res.header('Access-Control-Max-Age', '86400');
-      console.log(`✅ [CORS Middleware] Headers CORS adicionados para: ${origin}`);
-    } else {
-      // Permitir temporariamente para debug
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      console.log(`⚠️ [CORS Middleware] Origem não permitida, mas adicionando headers para debug: ${origin}`);
-    }
-  } else {
-    // Requisições sem origem - SEMPRE adicionar headers CORS para rotas da API
-    // Isso garante que requisições do navegador funcionem mesmo sem header origin
-    let originToUse = null;
-    
-    // Tentar inferir origem do referer primeiro
-    if (referer) {
-      try {
-        const refererUrl = new URL(referer);
-        const inferredOrigin = refererUrl.origin;
-        console.log(`🔍 [CORS] Tentando inferir origem do referer: ${inferredOrigin}`);
-        
-        // Verificar se a origem inferida é permitida
-        const normalizedInferred = inferredOrigin.endsWith('/') ? inferredOrigin.slice(0, -1) : inferredOrigin;
-        const isInferredAllowed = 
-          allowedOrigins.includes(inferredOrigin) || 
-          allowedOrigins.includes(normalizedInferred) ||
-          /^https:\/\/.*\.onrender\.com\/?$/.test(inferredOrigin) ||
-          /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(inferredOrigin);
-        
-        if (isInferredAllowed) {
-          originToUse = inferredOrigin;
-        }
-      } catch (e) {
-        console.log(`⚠️ [CORS] Erro ao inferir origem do referer: ${e.message}`);
-      }
-    }
-    
-    // Se não conseguiu inferir ou não há referer, usar origem padrão do frontend (URL primária do Render)
-    if (!originToUse) {
-      originToUse = 'https://natralha.onrender.com';
-    }
-    
-    // SEMPRE adicionar headers CORS para requisições da API (mesmo sem origin)
-    // Isso é crítico porque alguns navegadores/proxies podem não enviar o header origin
-    if (req.path.startsWith('/api/') || req.method === 'OPTIONS') {
-      res.header('Access-Control-Allow-Origin', originToUse);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      res.header('Access-Control-Max-Age', '86400');
-      console.log(`✅ [CORS Middleware] Sem origem, adicionando headers CORS para: ${originToUse} (inferida: ${originToUse !== 'https://natralha.onrender.com' ? 'sim' : 'não'})`);
-    } else {
-      // Para outras rotas (health checks, etc), também adicionar mas com origem padrão
-      res.header('Access-Control-Allow-Origin', originToUse);
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      console.log(`⚠️ [CORS Middleware] Sem origem, usando origem padrão para rota não-API: ${originToUse}`);
-    }
-  }
-  
-  next();
-});
 
 // Rota de teste rápido
 app.get('/debug-test', (req, res) => {
@@ -460,9 +194,8 @@ app.use((err, req, res, next) => {
     const origin = req.headers.origin;
     if (origin) {
       const isAllowed = !origin || 
-        allowedOrigins.includes(origin) ||
-        /^https:\/\/.*\.onrender\.com$/.test(origin) ||
-        /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+        /https:\/\/.*\.onrender\.com$/.test(origin) ||
+        /http:\/\/localhost/.test(origin);
       
       if (isAllowed) {
         res.header('Access-Control-Allow-Origin', origin);
@@ -3977,7 +3710,7 @@ try {
   // Adicionar rota de teste para verificar se as rotas estão funcionando
   app.get('/api/sociais/test', (req, res) => {
     const origin = req.headers.origin;
-    if (origin && (allowedOrigins.includes(origin) || /^https:\/\/.*\.onrender\.com$/.test(origin))) {
+    if (origin && (/https:\/\/.*\.onrender\.com$/.test(origin) || /http:\/\/localhost/.test(origin))) {
       res.header('Access-Control-Allow-Origin', origin);
       res.header('Access-Control-Allow-Credentials', 'true');
     }
@@ -4004,9 +3737,8 @@ app.use('/api/*', (req, res, next) => {
   // Adicionar headers CORS mesmo em erros 404
   const origin = req.headers.origin;
   const isAllowed = !origin || 
-    allowedOrigins.includes(origin) ||
-    /^https:\/\/.*\.onrender\.com$/.test(origin) ||
-    /^https:\/\/.*\.vercel\.(app|sh)$/.test(origin);
+    /https:\/\/.*\.onrender\.com$/.test(origin) ||
+    /http:\/\/localhost/.test(origin);
   
   if (isAllowed && origin) {
     res.header('Access-Control-Allow-Origin', origin);
