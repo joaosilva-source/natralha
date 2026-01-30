@@ -205,21 +205,8 @@ const corsOptions = {
   optionsSuccessStatus: 204 // Status 204 (No Content) para requisições OPTIONS bem-sucedidas
 };
 
-// CRÍTICO: Aplicar CORS COMO PRIMEIRO MIDDLEWARE após express()
-// Isso garante que requisições OPTIONS (preflight) sejam tratadas corretamente
-app.use(cors(corsOptions));
-
-// Middleware de logging para capturar TODAS as requisições após CORS
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    console.log(`🚨 [PRE-OPTIONS] Capturando requisição OPTIONS: ${req.path}`);
-    console.log(`   - Origin: ${req.headers.origin || 'sem origem'}`);
-    console.log(`   - Referer: ${req.headers.referer || 'sem referer'}`);
-  }
-  next();
-});
-
-// Handler OPTIONS explícito como fallback - garante headers CORS mesmo se middleware cors falhar
+// CRÍTICO: Handler OPTIONS deve ser registrado ANTES do middleware cors
+// para garantir que tenha prioridade absoluta sobre preflight requests
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const referer = req.headers.referer;
@@ -241,13 +228,21 @@ app.options('*', (req, res) => {
     }
   }
   
-  // Se ainda não há origem, usar origem padrão (URL primária do Render)
+  // Se ainda não há origem, usar origem padrão (tentar natralha-rrm3 primeiro, depois natralha)
   if (!originToUse) {
-    originToUse = 'https://natralha.onrender.com';
-    console.log(`⚠️ [OPTIONS Handler] Usando origem padrão: ${originToUse}`);
+    // Tentar inferir do host se disponível
+    const host = req.headers.host;
+    if (host && host.includes('natralha')) {
+      originToUse = `https://${host}`;
+      console.log(`🔍 [OPTIONS Handler] Tentando inferir origem do host: ${originToUse}`);
+    } else {
+      // Usar origem padrão baseada no frontend mais comum
+      originToUse = 'https://natralha-rrm3.onrender.com';
+      console.log(`⚠️ [OPTIONS Handler] Usando origem padrão: ${originToUse}`);
+    }
   }
   
-  // Verificar se a origem é permitida
+  // Verificar se a origem é permitida (sempre permitir .onrender.com)
   const normalizedOrigin = originToUse && originToUse.endsWith('/') ? originToUse.slice(0, -1) : originToUse;
   const isAllowed = 
     allowedOrigins.includes(originToUse) || 
@@ -256,25 +251,38 @@ app.options('*', (req, res) => {
     (originToUse && /^https:\/\/.*\.onrender\.com\/?$/.test(originToUse)) ||
     (originToUse && /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(originToUse));
   
-  if (isAllowed && originToUse) {
-    res.header('Access-Control-Allow-Origin', originToUse);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
-    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${originToUse}`);
+  // SEMPRE adicionar headers CORS para requisições OPTIONS
+  // Usar a origem da requisição se disponível, senão usar a inferida ou padrão
+  const finalOrigin = originToUse || 'https://natralha-rrm3.onrender.com';
+  
+  res.header('Access-Control-Allow-Origin', finalOrigin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (isAllowed) {
+    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${finalOrigin} (permitida)`);
   } else {
-    // Fallback: usar origem padrão mesmo se não estiver na lista (URL primária do Render)
-    const defaultOrigin = 'https://natralha.onrender.com';
-    res.header('Access-Control-Allow-Origin', defaultOrigin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
-    console.log(`⚠️ [OPTIONS Handler] Origem não permitida, usando fallback: ${defaultOrigin}`);
+    console.log(`⚠️ [OPTIONS Handler] Headers CORS enviados para: ${finalOrigin} (não na lista, mas permitindo)`);
   }
   
   return res.status(204).end(); // Status 204 para OPTIONS
+});
+
+// CRÍTICO: Aplicar CORS middleware DEPOIS do handler OPTIONS
+// Isso garante que o handler OPTIONS tenha prioridade para preflight, mas o middleware cors
+// ainda trata outras requisições normalmente
+app.use(cors(corsOptions));
+
+// Middleware de logging para capturar TODAS as requisições após CORS
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    console.log(`🚨 [PRE-OPTIONS] Capturando requisição OPTIONS: ${req.path}`);
+    console.log(`   - Origin: ${req.headers.origin || 'sem origem'}`);
+    console.log(`   - Referer: ${req.headers.referer || 'sem referer'}`);
+  }
+  next();
 });
 
 // Middleware para garantir headers CORS em TODAS as respostas
