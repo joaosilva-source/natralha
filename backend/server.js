@@ -157,10 +157,11 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Permitir requisições sem origem (ex: mobile apps, Postman, requisições do mesmo servidor)
     // IMPORTANTE: Sempre permitir para garantir que headers CORS sejam adicionados
+    // O middleware adicional garantirá que a origem correta seja usada
     if (!origin) {
-      console.log('✅ CORS: Requisição sem origem - permitindo e usando origem padrão');
-      // Retornar true permite que o middleware cors adicione headers
-      // O middleware adicional garantirá que a origem correta seja usada
+      console.log('✅ CORS: Requisição sem origem - permitindo (middleware adicional adicionará origem específica)');
+      // Retornar true permite que o middleware cors adicione headers básicos
+      // O middleware adicional DEPOIS garantirá que a origem correta seja usada
       return callback(null, true);
     }
     
@@ -277,6 +278,7 @@ app.options('*', (req, res) => {
 });
 
 // Middleware para garantir headers CORS em TODAS as respostas
+// Este middleware SEMPRE sobrescreve os headers CORS para garantir origem específica
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const referer = req.headers.referer;
@@ -288,6 +290,44 @@ app.use((req, res, next) => {
   console.log(`   - Referer: ${referer || 'sem referer'}`);
   console.log(`   - Host: ${host || 'sem host'}`);
   console.log(`   - User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'sem user-agent'}`);
+  
+  // Interceptor para garantir headers CORS corretos antes de enviar resposta
+  const originalEnd = res.end;
+  res.end = function(...args) {
+    // Garantir que headers CORS estejam sempre corretos antes de enviar
+    if (req.path.startsWith('/api/') || req.method === 'OPTIONS') {
+      let finalOrigin = origin;
+      
+      // Se não há origin, tentar inferir do referer
+      if (!finalOrigin && referer) {
+        try {
+          const refererUrl = new URL(referer);
+          finalOrigin = refererUrl.origin;
+        } catch (e) {
+          // Ignorar erro
+        }
+      }
+      
+      // Se ainda não há origem, usar padrão
+      if (!finalOrigin) {
+        finalOrigin = 'https://natralha-rrm3.onrender.com';
+      }
+      
+      // SEMPRE sobrescrever com origem específica (nunca usar *)
+      res.setHeader('Access-Control-Allow-Origin', finalOrigin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      
+      if (!origin) {
+        console.log(`🔧 [CORS Interceptor] Headers CORS garantidos antes de enviar resposta: ${finalOrigin}`);
+      }
+    }
+    
+    // Chamar método original
+    return originalEnd.apply(this, args);
+  };
   
   // Garantir headers CORS em TODAS as respostas
   if (origin) {
