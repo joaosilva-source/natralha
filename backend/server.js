@@ -142,16 +142,54 @@ const PORT = process.env.PORT || 8090;
 // Aceita qualquer subdomínio do onrender.com usando expressão regular
 app.use(cors({
   origin: (origin, callback) => {
+    // Log para diagnóstico
+    console.log(`🔍 [CORS] Verificando origem: ${origin || 'sem origem'}`);
+    
     if (!origin || /https:\/\/.*\.onrender\.com$/.test(origin) || /http:\/\/localhost/.test(origin)) {
+      console.log(`✅ [CORS] Origem permitida: ${origin || 'sem origem'}`);
       callback(null, true);
     } else {
+      console.log(`❌ [CORS] Origem bloqueada: ${origin}`);
       callback(new Error('CORS bloqueado para esta origem'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
 
+// Handler OPTIONS explícito para garantir que preflight requests sejam tratadas
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 [OPTIONS Handler] ${req.method} ${req.path} - Origin: ${origin || 'sem origem'}`);
+  
+  // Verificar se a origem é permitida
+  const isAllowed = !origin || 
+    /https:\/\/.*\.onrender\.com$/.test(origin) || 
+    /http:\/\/localhost/.test(origin);
+  
+  if (isAllowed) {
+    // Adicionar headers CORS
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      // Se não há origem, permitir qualquer origem para preflight
+      res.header('Access-Control-Allow-Origin', '*');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
+    console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${origin || 'qualquer origem'}`);
+  } else {
+    console.log(`❌ [OPTIONS Handler] Origem não permitida: ${origin}`);
+  }
+  
+  return res.status(200).end();
+});
 
 // Rota de teste rápido
 app.get('/debug-test', (req, res) => {
