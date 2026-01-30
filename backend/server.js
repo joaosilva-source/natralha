@@ -3747,7 +3747,14 @@ app.use('/api/*', (req, res, next) => {
 });
 
 // Servir arquivos estáticos da pasta public da raiz (DEPOIS das rotas da API)
-app.use(express.static(path.join(__dirname, '../public')));
+const publicPath = path.resolve(__dirname, '../public');
+console.log(`📁 [Static] Servindo arquivos estáticos de: ${publicPath}`);
+
+// Middleware para servir arquivos estáticos, mas passar para catch-all se não encontrar
+app.use(express.static(publicPath, {
+  // Não enviar 404 automaticamente, passar para próximo middleware
+  fallthrough: true
+}));
 
 // Rota catch-all para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
 // IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
@@ -3757,7 +3764,24 @@ app.get('*', (req, res, next) => {
     return next();
   }
   
-  // Servir o index.html da pasta public da raiz
-  const indexPath = path.join(__dirname, '../public/index.html');
-  res.sendFile(indexPath);
+  // Servir o index.html da pasta public da raiz (usar caminho absoluto)
+  const indexPath = path.resolve(__dirname, '../public/index.html');
+  console.log(`📄 [Catch-all] Servindo index.html para: ${req.path} (caminho: ${indexPath})`);
+  
+  // Verificar se o arquivo existe antes de servir
+  if (!fs.existsSync(indexPath)) {
+    console.error(`❌ [Catch-all] Arquivo não encontrado: ${indexPath}`);
+    return res.status(404).send('Arquivo index.html não encontrado');
+  }
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`❌ [Catch-all] Erro ao servir index.html:`, err);
+      if (!res.headersSent) {
+        res.status(500).send('Erro ao carregar aplicação');
+      }
+    } else {
+      console.log(`✅ [Catch-all] index.html servido com sucesso para: ${req.path}`);
+    }
+  });
 });
