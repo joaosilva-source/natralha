@@ -3750,11 +3750,44 @@ app.use('/api/*', (req, res, next) => {
 const publicPath = path.resolve(__dirname, '../public');
 console.log(`📁 [Static] Servindo arquivos estáticos de: ${publicPath}`);
 
-// Middleware para servir arquivos estáticos, mas passar para catch-all se não encontrar
+// Verificar se a pasta public existe na inicialização
+if (!fs.existsSync(publicPath)) {
+  console.error(`❌ [Static] Pasta public não encontrada: ${publicPath}`);
+} else {
+  console.log(`✅ [Static] Pasta public encontrada`);
+  const assetsPath = path.join(publicPath, 'assets');
+  if (fs.existsSync(assetsPath)) {
+    const assets = fs.readdirSync(assetsPath);
+    console.log(`✅ [Static] Pasta assets encontrada com ${assets.length} arquivos`);
+    if (assets.length > 0) {
+      console.log(`📦 [Static] Primeiros arquivos: ${assets.slice(0, 3).join(', ')}...`);
+    }
+  } else {
+    console.warn(`⚠️ [Static] Pasta assets não encontrada em: ${assetsPath}`);
+  }
+}
+
+// Middleware para servir arquivos estáticos ANTES do catch-all
+// IMPORTANTE: Deve estar depois das rotas de API, mas antes do catch-all
 app.use(express.static(publicPath, {
-  // Não enviar 404 automaticamente, passar para próximo middleware
-  fallthrough: true
+  // fallthrough: false (padrão) - retorna 404 se arquivo não existir
+  // Isso garante que arquivos existentes sejam servidos corretamente
+  index: false // Não servir index.html automaticamente, deixar para catch-all
 }));
+
+// Middleware de logging para debug de requisições de arquivos estáticos
+app.use((req, res, next) => {
+  // Log apenas para requisições de assets (não para rotas de API)
+  if (!req.path.startsWith('/api') && (req.path.startsWith('/assets') || req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/))) {
+    const filePath = path.join(publicPath, req.path);
+    const exists = fs.existsSync(filePath);
+    console.log(`📦 [Static Request] ${req.method} ${req.path} - Existe: ${exists}`);
+    if (!exists) {
+      console.log(`   ⚠️ Arquivo não encontrado no caminho: ${filePath}`);
+    }
+  }
+  next();
+});
 
 // Rota catch-all para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
 // IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
