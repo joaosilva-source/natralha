@@ -156,8 +156,11 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     // Permitir requisições sem origem (ex: mobile apps, Postman, requisições do mesmo servidor)
+    // IMPORTANTE: Sempre permitir para garantir que headers CORS sejam adicionados
     if (!origin) {
-      console.log('✅ CORS: Requisição sem origem permitida');
+      console.log('✅ CORS: Requisição sem origem - permitindo e usando origem padrão');
+      // Retornar true permite que o middleware cors adicione headers
+      // O middleware adicional garantirá que a origem correta seja usada
       return callback(null, true);
     }
     
@@ -313,52 +316,53 @@ app.use((req, res, next) => {
       console.log(`⚠️ [CORS Middleware] Origem não permitida, mas adicionando headers para debug: ${origin}`);
     }
   } else {
-    // Requisições sem origem - tentar inferir do referer ou usar origem padrão
-    let inferredOrigin = null;
+    // Requisições sem origem - SEMPRE adicionar headers CORS para rotas da API
+    // Isso garante que requisições do navegador funcionem mesmo sem header origin
+    let originToUse = null;
     
-    // Tentar inferir origem do referer
+    // Tentar inferir origem do referer primeiro
     if (referer) {
       try {
         const refererUrl = new URL(referer);
-        inferredOrigin = refererUrl.origin;
+        const inferredOrigin = refererUrl.origin;
         console.log(`🔍 [CORS] Tentando inferir origem do referer: ${inferredOrigin}`);
+        
+        // Verificar se a origem inferida é permitida
+        const normalizedInferred = inferredOrigin.endsWith('/') ? inferredOrigin.slice(0, -1) : inferredOrigin;
+        const isInferredAllowed = 
+          allowedOrigins.includes(inferredOrigin) || 
+          allowedOrigins.includes(normalizedInferred) ||
+          /^https:\/\/.*\.onrender\.com\/?$/.test(inferredOrigin) ||
+          /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(inferredOrigin);
+        
+        if (isInferredAllowed) {
+          originToUse = inferredOrigin;
+        }
       } catch (e) {
         console.log(`⚠️ [CORS] Erro ao inferir origem do referer: ${e.message}`);
       }
     }
     
-    // Verificar se a origem inferida é permitida
-    if (inferredOrigin) {
-      const normalizedInferred = inferredOrigin.endsWith('/') ? inferredOrigin.slice(0, -1) : inferredOrigin;
-      const isInferredAllowed = 
-        allowedOrigins.includes(inferredOrigin) || 
-        allowedOrigins.includes(normalizedInferred) ||
-        /^https:\/\/.*\.onrender\.com\/?$/.test(inferredOrigin) ||
-        /^https:\/\/.*\.vercel\.(app|sh)\/?$/.test(inferredOrigin);
-      
-      if (isInferredAllowed) {
-        res.header('Access-Control-Allow-Origin', inferredOrigin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-        console.log(`✅ [CORS Middleware] Origem inferida do referer e headers adicionados: ${inferredOrigin}`);
-      } else {
-        // Usar origem padrão do frontend
-        const defaultOrigin = 'https://natralha-rrm3.onrender.com';
-        res.header('Access-Control-Allow-Origin', defaultOrigin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-        console.log(`⚠️ [CORS Middleware] Sem origem, usando origem padrão: ${defaultOrigin}`);
-      }
-    } else {
-      // Usar origem padrão do frontend quando não há referer
-      const defaultOrigin = 'https://natralha-rrm3.onrender.com';
-      res.header('Access-Control-Allow-Origin', defaultOrigin);
+    // Se não conseguiu inferir ou não há referer, usar origem padrão do frontend
+    if (!originToUse) {
+      originToUse = 'https://natralha-rrm3.onrender.com';
+    }
+    
+    // SEMPRE adicionar headers CORS para requisições da API (mesmo sem origin)
+    // Isso é crítico porque alguns navegadores/proxies podem não enviar o header origin
+    if (req.path.startsWith('/api/') || req.method === 'OPTIONS') {
+      res.header('Access-Control-Allow-Origin', originToUse);
       res.header('Access-Control-Allow-Credentials', 'true');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-      console.log(`⚠️ [CORS Middleware] Sem origem e sem referer, usando origem padrão: ${defaultOrigin}`);
+      res.header('Access-Control-Max-Age', '86400');
+      console.log(`✅ [CORS Middleware] Sem origem, adicionando headers CORS para: ${originToUse} (inferida: ${originToUse !== 'https://natralha-rrm3.onrender.com' ? 'sim' : 'não'})`);
+    } else {
+      // Para outras rotas (health checks, etc), também adicionar mas com origem padrão
+      res.header('Access-Control-Allow-Origin', originToUse);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+      console.log(`⚠️ [CORS Middleware] Sem origem, usando origem padrão para rota não-API: ${originToUse}`);
     }
   }
   
