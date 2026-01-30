@@ -3797,10 +3797,10 @@ app.use('/api/*', (req, res, next) => {
   });
 });
 
-// Servir arquivos estáticos do frontend (DEPOIS das rotas da API)
-app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+// Servir arquivos estáticos da pasta public da raiz (DEPOIS das rotas da API)
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Rota para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
+// Rota catch-all para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
 // IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
 app.get('*', (req, res, next) => {
   // Se for uma rota de API, não servir o index.html
@@ -3808,15 +3808,7 @@ app.get('*', (req, res, next) => {
     return next();
   }
   
-  // Verificar se o arquivo existe antes de tentar servi-lo
-  const indexPath = path.join(__dirname, 'public', 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    // Se não existir, retornar 404 (frontend está em serviço separado no Render)
-    res.status(404).json({ 
-      error: 'Not Found', 
-      message: 'Frontend não está disponível neste serviço. Acesse o serviço frontend separado.' 
-    });
-  }
+  // Servir o index.html da pasta public da raiz
+  const indexPath = path.join(__dirname, '../public/index.html');
+  res.sendFile(indexPath);
 });

@@ -1,8 +1,9 @@
 // VERSION: v1.0.3 | DATE: 2026-01-14 | AUTHOR: VeloHub Development Team
 import axios from 'axios'
 
-// URL base da API SKYNET - Backend Online
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://velohub-backend.onrender.com/api/sociais'
+// URL base da API - usar caminho relativo quando servido pelo mesmo servidor
+// ou URL completa via variável de ambiente para desenvolvimento/deploy separado
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/sociais'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
