@@ -90,8 +90,7 @@ const Reports = () => {
 
     try {
       console.log('🔍 [Reports] Filtros aplicados:', filters)
-      console.log('🔍 [Reports] URL da API:', import.meta.env.VITE_API_URL || 'https://staging-skynet-278491073220.us-east1.run.app/api/sociais')
-      
+      console.log('🔍 [Reports] URL da API:', import.meta.env.VITE_API_URL || 'https://velohub-backend.onrender.com/api/sociais')      
       // Buscar dados com filtros
       const tabulationsResult = await getTabulations(filters)
       

@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 // URL base da API SKYNET - Backend Online
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://staging-skynet-278491073220.us-east1.run.app/api/sociais'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://velohub-backend.onrender.com/api/sociais'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
