@@ -292,17 +292,21 @@ app.use((req, res, next) => {
   console.log(`   - User-Agent: ${req.headers['user-agent']?.substring(0, 50) || 'sem user-agent'}`);
   
   // Interceptor para garantir headers CORS corretos antes de enviar resposta
+  // Este interceptor SEMPRE executa antes de enviar a resposta para garantir headers corretos
   const originalEnd = res.end;
   res.end = function(...args) {
     // Garantir que headers CORS estejam sempre corretos antes de enviar
+    // Aplicar para TODAS as rotas da API e requisições OPTIONS
     if (req.path.startsWith('/api/') || req.method === 'OPTIONS') {
       let finalOrigin = origin;
+      let originSource = 'header origin';
       
       // Se não há origin, tentar inferir do referer
       if (!finalOrigin && referer) {
         try {
           const refererUrl = new URL(referer);
           finalOrigin = refererUrl.origin;
+          originSource = 'referer inferido';
         } catch (e) {
           // Ignorar erro
         }
@@ -311,18 +315,18 @@ app.use((req, res, next) => {
       // Se ainda não há origem, usar padrão
       if (!finalOrigin) {
         finalOrigin = 'https://natralha-rrm3.onrender.com';
+        originSource = 'origem padrão';
       }
       
       // SEMPRE sobrescrever com origem específica (nunca usar *)
+      // Isso garante que mesmo se outros middlewares adicionaram headers incorretos, estes serão corretos
       res.setHeader('Access-Control-Allow-Origin', finalOrigin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
       res.setHeader('Access-Control-Max-Age', '86400');
       
-      if (!origin) {
-        console.log(`🔧 [CORS Interceptor] Headers CORS garantidos antes de enviar resposta: ${finalOrigin}`);
-      }
+      console.log(`🔧 [CORS Interceptor] ${req.method} ${req.path} - Headers CORS garantidos: ${finalOrigin} (${originSource})`);
     }
     
     // Chamar método original
