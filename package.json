@@ -10,7 +10,7 @@
     "import-sociais": "node backend/scripts/import-sociais-sheets.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:frontend",
-    "build:frontend": "cd front && npm install && npm run build",
+    "build:frontend": "cd front && npm install --legacy-peer-deps && NODE_OPTIONS='--max-old-space-size=4096' npm run build",
     "build:all": "npm run build:frontend && npm install"
   },
   "keywords": [
