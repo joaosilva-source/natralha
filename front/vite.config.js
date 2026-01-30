@@ -121,6 +121,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react-is']
   },
   build: {
+    outDir: '../public', // Build na pasta public da raiz para servir pelo Express
+    emptyOutDir: false, // Não limpar a pasta para preservar arquivos estáticos existentes
     minify: 'esbuild', // Usar esbuild para minificação (mais rápido e usa menos memória)
     sourcemap: false, // Desabilitar sourcemap em produção para economizar memória
     chunkSizeWarningLimit: 1000,

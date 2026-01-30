@@ -138,48 +138,27 @@ const app = express();
 // REGRA: Backend porta 8090 na rede local | Frontend porta 8080
 const PORT = process.env.PORT || 8090;
 
-// Middleware CORS - CONFIGURAÇÃO PRIMEIRO, ANTES DE QUALQUER OUTRO MIDDLEWARE
-// Aceita qualquer subdomínio do onrender.com usando expressão regular
+// Middleware CORS - Simplificado para mesmo domínio
+// Como frontend e backend estarão no mesmo domínio, CORS é principalmente para desenvolvimento local
 const corsOptions = {
   origin: function (origin, callback) {
-    // Permitir se não houver origem (ex: Postman) ou se for do domínio onrender.com ou localhost
+    // Em produção (mesmo domínio), não há necessidade de CORS
+    // Manter apenas para desenvolvimento local e ferramentas como Postman
     if (!origin || 
-        /^https:\/\/.*\.onrender\.com$/.test(origin) || 
+        process.env.NODE_ENV === 'development' ||
         /^http:\/\/localhost/.test(origin)) {
       return callback(null, true);
     }
-    callback(new Error('Bloqueado pela política CORS'));
+    // Em produção, permitir apenas se for mesmo domínio (não há origin header)
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 };
 
-// CRÍTICO: Aplicar CORS como uma das primeiras configurações após express()
+// Aplicar CORS como uma das primeiras configurações após express()
 app.use(cors(corsOptions));
-
-// Handler OPTIONS explícito para garantir que preflight requests sejam tratadas
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  
-  // Usar a mesma lógica do corsOptions
-  const isAllowed = !origin || 
-    /^https:\/\/.*\.onrender\.com$/.test(origin) || 
-    /^http:\/\/localhost/.test(origin);
-  
-  if (isAllowed) {
-    // Adicionar headers CORS
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
-  }
-  
-  return res.status(200).end();
-});
 
 // Rota de teste rápido
 app.get('/debug-test', (req, res) => {
@@ -218,19 +197,7 @@ function parseTextContent(text) {
 app.use((err, req, res, next) => {
   console.error('❌ Erro no servidor:', err);
   if (!res.headersSent) {
-    // Garantir headers CORS mesmo em caso de erro
-    const origin = req.headers.origin;
-    if (origin) {
-      const isAllowed = !origin || 
-        /https:\/\/.*\.onrender\.com$/.test(origin) ||
-        /http:\/\/localhost/.test(origin);
-      
-      if (isAllowed) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-      }
-    }
-    
+    // Middleware cors global já adiciona headers CORS automaticamente
     res.status(500).json({ 
       success: false, 
       error: 'Erro interno do servidor',
@@ -3737,11 +3704,6 @@ try {
   
   // Adicionar rota de teste para verificar se as rotas estão funcionando
   app.get('/api/sociais/test', (req, res) => {
-    const origin = req.headers.origin;
-    if (origin && (/https:\/\/.*\.onrender\.com$/.test(origin) || /http:\/\/localhost/.test(origin))) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    }
     res.json({
       success: true,
       message: 'Rotas de Sociais estão funcionando',
@@ -3762,21 +3724,8 @@ app.use('/api/*', (req, res, next) => {
     return next();
   }
   
-  // Adicionar headers CORS mesmo em erros 404
-  const origin = req.headers.origin;
-  const isAllowed = !origin || 
-    /https:\/\/.*\.onrender\.com$/.test(origin) ||
-    /http:\/\/localhost/.test(origin);
-  
-  if (isAllowed && origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  
   // Log para debug
   console.log(`⚠️ [404] Rota não encontrada: ${req.method} ${req.path}`);
-  console.log(`⚠️ [404] Origin: ${origin || 'sem origem'}`);
-  console.log(`⚠️ [404] Headers:`, JSON.stringify(req.headers, null, 2));
   
   // Retornar 404 apenas se nenhuma rota anterior foi correspondida
   res.status(404).json({
