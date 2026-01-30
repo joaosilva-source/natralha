@@ -3770,8 +3770,9 @@ if (!fs.existsSync(publicPath)) {
 // Middleware para servir arquivos estáticos ANTES do catch-all
 // IMPORTANTE: Deve estar depois das rotas de API, mas antes do catch-all
 app.use(express.static(publicPath, {
-  // fallthrough: false (padrão) - retorna 404 se arquivo não existir
-  // Isso garante que arquivos existentes sejam servidos corretamente
+  // fallthrough: true - passa para próximo middleware se arquivo não existir
+  // Isso permite que o catch-all sirva o index.html para rotas do SPA
+  fallthrough: true,
   index: false // Não servir index.html automaticamente, deixar para catch-all
 }));
 
@@ -3791,22 +3792,27 @@ app.use((req, res, next) => {
 
 // Rota catch-all para servir o React app (SPA) - DEVE SER A ÚLTIMA ROTA
 // IMPORTANTE: Esta rota NÃO deve capturar rotas /api/*
+// Esta é a ÚLTIMA rota do servidor - qualquer requisição que não seja API ou arquivo estático
+// será servida com o index.html para permitir roteamento do SPA
 app.get('*', (req, res, next) => {
-  // Se for uma rota de API, não servir o index.html
+  // Se for uma rota de API, não servir o index.html (deve ter sido tratada antes)
   if (req.path.startsWith('/api')) {
-    return next();
+    console.log(`⚠️ [Catch-all] Rota de API chegou no catch-all: ${req.path}`);
+    return next(); // Retornar 404 para rotas de API não encontradas
   }
   
   // Servir o index.html da pasta public da raiz (usar caminho absoluto)
   const indexPath = path.resolve(__dirname, '../public/index.html');
-  console.log(`📄 [Catch-all] Servindo index.html para: ${req.path} (caminho: ${indexPath})`);
+  console.log(`📄 [Catch-all] Servindo index.html para rota SPA: ${req.path}`);
   
   // Verificar se o arquivo existe antes de servir
   if (!fs.existsSync(indexPath)) {
-    console.error(`❌ [Catch-all] Arquivo não encontrado: ${indexPath}`);
-    return res.status(404).send('Arquivo index.html não encontrado');
+    console.error(`❌ [Catch-all] Arquivo index.html não encontrado em: ${indexPath}`);
+    return res.status(404).send('Arquivo index.html não encontrado. Verifique se o build do frontend foi executado.');
   }
   
+  // Servir o index.html com headers apropriados
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error(`❌ [Catch-all] Erro ao servir index.html:`, err);
@@ -3818,3 +3824,6 @@ app.get('*', (req, res, next) => {
     }
   });
 });
+
+// NENHUMA ROTA DEVE SER ADICIONADA APÓS O CATCH-ALL ACIMA
+// Esta é a última rota do servidor
