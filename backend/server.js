@@ -142,10 +142,10 @@ const PORT = process.env.PORT || 8090;
 const allowedOrigins = [
   'https://app.velohub.velotax.com.br', // NOVO DOMÍNIO PERSONALIZADO
   process.env.CORS_ORIGIN || 'https://velohub-278491073220.us-east1.run.app',
-  'https://natralha-rrm3.onrender.com', // Frontend Render.com (sem barra)
-  'https://natralha-rrm3.onrender.com/', // Frontend Render.com (com barra)
-  'https://natralha.onrender.com', // Frontend Render.com alternativo (sem barra)
-  'https://natralha.onrender.com/', // Frontend Render.com alternativo (com barra)
+  'https://natralha.onrender.com', // Frontend Render.com - URL PRIMÁRIA (sem barra)
+  'https://natralha.onrender.com/', // Frontend Render.com - URL PRIMÁRIA (com barra)
+  'https://natralha-rrm3.onrender.com', // Frontend Render.com alternativo (sem barra)
+  'https://natralha-rrm3.onrender.com/', // Frontend Render.com alternativo (com barra)
   'https://velohub-backend.onrender.com', // Backend Render.com (para requisições internas)
   'http://localhost:8080', // Frontend padrão (regra estabelecida)
   'http://localhost:3000', // Compatibilidade
@@ -241,9 +241,9 @@ app.options('*', (req, res) => {
     }
   }
   
-  // Se ainda não há origem, usar origem padrão
+  // Se ainda não há origem, usar origem padrão (URL primária do Render)
   if (!originToUse) {
-    originToUse = 'https://natralha-rrm3.onrender.com';
+    originToUse = 'https://natralha.onrender.com';
     console.log(`⚠️ [OPTIONS Handler] Usando origem padrão: ${originToUse}`);
   }
   
@@ -264,8 +264,8 @@ app.options('*', (req, res) => {
     res.header('Access-Control-Max-Age', '86400');
     console.log(`✅ [OPTIONS Handler] Headers CORS enviados para: ${originToUse}`);
   } else {
-    // Fallback: usar origem padrão mesmo se não estiver na lista
-    const defaultOrigin = 'https://natralha-rrm3.onrender.com';
+    // Fallback: usar origem padrão mesmo se não estiver na lista (URL primária do Render)
+    const defaultOrigin = 'https://natralha.onrender.com';
     res.header('Access-Control-Allow-Origin', defaultOrigin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
@@ -312,9 +312,9 @@ app.use((req, res, next) => {
         }
       }
       
-      // Se ainda não há origem, usar padrão
+      // Se ainda não há origem, usar padrão (URL primária do Render)
       if (!finalOrigin) {
-        finalOrigin = 'https://natralha-rrm3.onrender.com';
+        finalOrigin = 'https://natralha.onrender.com';
         originSource = 'origem padrão';
       }
       
@@ -387,9 +387,9 @@ app.use((req, res, next) => {
       }
     }
     
-    // Se não conseguiu inferir ou não há referer, usar origem padrão do frontend
+    // Se não conseguiu inferir ou não há referer, usar origem padrão do frontend (URL primária do Render)
     if (!originToUse) {
-      originToUse = 'https://natralha-rrm3.onrender.com';
+      originToUse = 'https://natralha.onrender.com';
     }
     
     // SEMPRE adicionar headers CORS para requisições da API (mesmo sem origin)
@@ -400,7 +400,7 @@ app.use((req, res, next) => {
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
       res.header('Access-Control-Max-Age', '86400');
-      console.log(`✅ [CORS Middleware] Sem origem, adicionando headers CORS para: ${originToUse} (inferida: ${originToUse !== 'https://natralha-rrm3.onrender.com' ? 'sim' : 'não'})`);
+      console.log(`✅ [CORS Middleware] Sem origem, adicionando headers CORS para: ${originToUse} (inferida: ${originToUse !== 'https://natralha.onrender.com' ? 'sim' : 'não'})`);
     } else {
       // Para outras rotas (health checks, etc), também adicionar mas com origem padrão
       res.header('Access-Control-Allow-Origin', originToUse);
