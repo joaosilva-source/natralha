@@ -428,31 +428,42 @@ IMPORTANTE:
     
     // Tentar gerar com Gemini primeiro (com retry automático)
     const generateWithGemini = async () => {
-      // Tentar modelos disponíveis em ordem de preferência
-      const modelsToTry = ['gemini-1.5-pro-latest', 'gemini-1.5-pro', 'gemini-pro']
-      let lastError = null
+      // Usar gemini-1.5-flash como modelo padrão (mais estável e compatível com v1beta)
+      // Se não disponível, tentar gemini-1.5-pro como fallback
+      let model;
+      let lastError = null;
       
-      for (const modelName of modelsToTry) {
+      try {
+        console.log('🔄 Tentando modelo Gemini: gemini-1.5-flash')
+        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+        const result = await model.generateContent(prompt)
+        console.log('✅ Sucesso com modelo: gemini-1.5-flash')
+        return result.response.text()
+      } catch (error) {
+        console.warn('⚠️ Modelo gemini-1.5-flash falhou:', error.message)
+        lastError = error
+        
+        // Se não for erro de modelo não encontrado, não tentar fallback
+        const errorMessage = error.message || String(error)
+        if (!errorMessage.includes('404') && !errorMessage.includes('not found') && !errorMessage.includes('is not found')) {
+          throw error
+        }
+        
+        // Tentar gemini-1.5-pro como fallback
         try {
-          console.log(`🔄 Tentando modelo Gemini: ${modelName}`)
-          const model = genAI.getGenerativeModel({ model: modelName })
+          console.log('🔄 Tentando modelo Gemini: gemini-1.5-pro (fallback)')
+          model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
           const result = await model.generateContent(prompt)
-          console.log(`✅ Sucesso com modelo: ${modelName}`)
+          console.log('✅ Sucesso com modelo: gemini-1.5-pro')
           return result.response.text()
-        } catch (error) {
-          console.warn(`⚠️ Modelo ${modelName} falhou:`, error.message)
-          lastError = error
-          // Se não for erro de modelo não encontrado, não tentar outros
-          const errorMessage = error.message || String(error)
-          if (!errorMessage.includes('404') && !errorMessage.includes('not found')) {
-            throw error
-          }
-          continue
+        } catch (fallbackError) {
+          console.warn('⚠️ Modelo gemini-1.5-pro também falhou:', fallbackError.message)
+          const finalError = new Error(`Todos os modelos Gemini falharam. Erro gemini-1.5-flash: ${lastError.message}, Erro gemini-1.5-pro: ${fallbackError.message}`)
+          finalError.originalError = fallbackError
+          finalError.modelsTried = ['gemini-1.5-flash', 'gemini-1.5-pro']
+          throw finalError
         }
       }
-      
-      // Se todos os modelos falharam, lançar o último erro
-      throw lastError || new Error('Nenhum modelo Gemini disponível')
     }
 
     let report
@@ -479,9 +490,20 @@ IMPORTANTE:
           errorMessage.includes('404') ||
           errorMessage.includes('not found') ||
           errorMessage.includes('is not found') ||
-          errorMessage.includes('not supported')
+          errorMessage.includes('not supported') ||
+          errorMessage.includes('models/') && errorMessage.includes('is not found')
         )
       )
+      
+      // Log detalhado para debug
+      console.log('🔍 [geminiService] Análise de erro Gemini:', {
+        errorMessage,
+        errorStatus,
+        isQuotaError,
+        isModelNotFoundError,
+        originalError: geminiError,
+        modelsTried: geminiError.modelsTried || 'N/A'
+      })
       
       // Usar Groq como fallback se for erro de quota OU modelo não encontrado
       if (isQuotaError || isModelNotFoundError) {
@@ -492,6 +514,14 @@ IMPORTANTE:
           groqAPIKeyAvailable: !!GROQ_API_KEY,
           groqAPIKeyLength: GROQ_API_KEY?.length || 0
         })
+        
+        // Tentar usar Groq como fallback apenas se estiver configurado (não travar se não estiver)
+        const groqAvailable = !!GROQ_API_KEY || !!Groq
+        
+        if (!groqAvailable) {
+          console.warn('⚠️ Groq não configurado. Retornando erro do Gemini apenas.')
+          throw geminiError
+        }
         
         // Tentar usar Groq como fallback (primeiro tenta backend, depois frontend)
         try {
@@ -505,7 +535,9 @@ IMPORTANTE:
             console.warn('⚠️ Backend Groq não disponível. Tentando usar Groq diretamente no frontend...')
             const groq = configureGroq()
             if (!groq) {
-              throw new Error('Groq não configurado. Não é possível usar fallback.')
+              // Se Groq não estiver configurado, retornar erro do Gemini (não travar)
+              console.warn('⚠️ Groq não configurado no frontend. Retornando erro do Gemini.')
+              throw geminiError
             }
             
             console.log('🔄 Gerando relatório com Groq AI (fallback direto no frontend)...')
@@ -531,7 +563,8 @@ IMPORTANTE:
           }
         } catch (groqError) {
           console.error('❌ Erro ao gerar relatório com Groq:', groqError)
-          throw new Error(`Falha ao gerar relatório com ambos os provedores. Gemini: ${geminiError.message}, Groq: ${groqError.message}`)
+          // Se Groq falhar, retornar erro do Gemini (não travar com mensagem de ambos)
+          throw geminiError
         }
       } else {
         // Se não for erro de quota, relançar o erro original

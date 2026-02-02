@@ -599,6 +599,99 @@ router.post('/report', async (req, res) => {
   }
 });
 
+// POST /api/sociais/report/groq - Gerar relatório executivo via Groq (fallback)
+router.post('/report/groq', async (req, res) => {
+  try {
+    global.emitTraffic('Sociais', 'received', 'Entrada recebida - POST /api/sociais/report/groq');
+    global.emitLog('info', 'POST /api/sociais/report/groq - Gerando relatório executivo com Groq');
+    
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+      global.emitTraffic('Sociais', 'error', 'Prompt não fornecido');
+      global.emitLog('error', 'POST /api/sociais/report/groq - Prompt é obrigatório');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Prompt é obrigatório' 
+      });
+    }
+
+    // Verificar se Groq está disponível
+    let Groq;
+    try {
+      Groq = require('groq-sdk');
+    } catch (error) {
+      global.emitTraffic('Sociais', 'error', 'Groq SDK não disponível');
+      global.emitLog('error', 'POST /api/sociais/report/groq - Groq SDK não instalado');
+      return res.status(503).json({
+        success: false,
+        error: 'Serviço Groq não disponível. Instale o pacote groq-sdk.'
+      });
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      global.emitTraffic('Sociais', 'error', 'GROQ_API_KEY não configurada');
+      global.emitLog('error', 'POST /api/sociais/report/groq - GROQ_API_KEY não configurada');
+      return res.status(503).json({
+        success: false,
+        error: 'Groq API Key não configurada. Verifique GROQ_API_KEY nas variáveis de ambiente.'
+      });
+    }
+
+    try {
+      const groq = new Groq({ apiKey: GROQ_API_KEY });
+      
+      global.emitTraffic('Sociais', 'processing', 'Gerando relatório com Groq');
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um consultor sênior de CX (Customer Experience). Escreva relatórios executivos narrativos, profissionais e humanos em formato Markdown.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        model: 'llama-3.1-8b-instant',
+        temperature: 0.7,
+        max_tokens: 4000
+      });
+      
+      const report = completion.choices[0]?.message?.content || '';
+      
+      if (report) {
+        global.emitTraffic('Sociais', 'completed', 'Concluído - Relatório gerado com sucesso via Groq');
+        global.emitLog('success', 'POST /api/sociais/report/groq - Relatório gerado com sucesso');
+        
+        // INBOUND: Resposta para o frontend
+        global.emitJsonInput({ success: true, data: report });
+        res.json({
+          success: true,
+          data: report
+        });
+      } else {
+        throw new Error('Resposta vazia do Groq');
+      }
+    } catch (groqError) {
+      global.emitTraffic('Sociais', 'error', `Erro ao gerar relatório com Groq: ${groqError.message}`);
+      global.emitLog('error', `POST /api/sociais/report/groq - Erro: ${groqError.message}`);
+      res.status(500).json({
+        success: false,
+        error: `Erro ao gerar relatório com Groq: ${groqError.message}`
+      });
+    }
+  } catch (error) {
+    global.emitTraffic('Sociais', 'error', 'Erro interno do servidor');
+    global.emitLog('error', `POST /api/sociais/report/groq - Erro: ${error.message}`);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno do servidor' 
+    });
+  }
+});
+
 // GET /api/sociais/:id - Obter tabulação por ID
 router.get('/:id', async (req, res) => {
   try {

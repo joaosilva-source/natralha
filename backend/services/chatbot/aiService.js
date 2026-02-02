@@ -13,7 +13,7 @@ class AIService {
     this.openai = null;
     this.gemini = null;
     this.openaiModel = "gpt-4o-mini"; // Modelo OpenAI (primário)
-    this.geminiModel = "gemini-2.5-pro"; // Modelo Gemini (fallback)
+    this.geminiModel = "gemini-1.5-flash"; // Modelo Gemini (fallback) - mais estável e compatível com v1beta
     
     // Cache de status das IAs (TTL 3min - OTIMIZADO)
     this.statusCache = {
