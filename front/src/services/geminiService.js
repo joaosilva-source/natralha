@@ -144,6 +144,20 @@ export const generateExecutiveReport = async (data, filters = {}) => {
       }
     }
 
+    // PRIMEIRO: Tentar usar o backend (mais confiável, melhor controle de API)
+    console.log('🔄 Tentando gerar relatório via backend...')
+    try {
+      const response = await api.post('/report', { data, filters })
+      if (response.data.success) {
+        console.log('✅ Relatório gerado com sucesso via backend')
+        return response.data
+      }
+    } catch (backendError) {
+      console.warn('⚠️ Backend não disponível ou falhou, tentando frontend:', backendError.message)
+      // Continuar para tentar no frontend
+    }
+
+    // FALLBACK: Tentar usar Gemini diretamente no frontend
     console.log('🔄 Inicializando Gemini AI no frontend...')
     const genAI = configureGemini()
     if (!genAI) {
