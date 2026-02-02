@@ -428,42 +428,48 @@ IMPORTANTE:
     
     // Tentar gerar com Gemini primeiro (com retry automático)
     const generateWithGemini = async () => {
-      // Usar gemini-1.5-flash como modelo padrão (mais estável e compatível com v1beta)
-      // Se não disponível, tentar gemini-1.5-pro como fallback
-      let model;
-      let lastError = null;
+      // Tentar modelos com sufixos completos primeiro (mais compatíveis)
+      // Ordem: flash-001, flash, pro-001, pro
+      const modelsToTry = [
+        'gemini-1.5-flash-001',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro-001',
+        'gemini-1.5-pro',
+        'gemini-pro' // Fallback final
+      ]
       
-      try {
-        console.log('🔄 Tentando modelo Gemini: gemini-1.5-flash')
-        model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-        const result = await model.generateContent(prompt)
-        console.log('✅ Sucesso com modelo: gemini-1.5-flash')
-        return result.response.text()
-      } catch (error) {
-        console.warn('⚠️ Modelo gemini-1.5-flash falhou:', error.message)
-        lastError = error
-        
-        // Se não for erro de modelo não encontrado, não tentar fallback
-        const errorMessage = error.message || String(error)
-        if (!errorMessage.includes('404') && !errorMessage.includes('not found') && !errorMessage.includes('is not found')) {
-          throw error
-        }
-        
-        // Tentar gemini-1.5-pro como fallback
+      let lastError = null
+      
+      for (const modelName of modelsToTry) {
         try {
-          console.log('🔄 Tentando modelo Gemini: gemini-1.5-pro (fallback)')
-          model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+          console.log(`🔄 Tentando modelo Gemini: ${modelName}`)
+          const model = genAI.getGenerativeModel({ model: modelName })
           const result = await model.generateContent(prompt)
-          console.log('✅ Sucesso com modelo: gemini-1.5-pro')
+          console.log(`✅ Sucesso com modelo: ${modelName}`)
           return result.response.text()
-        } catch (fallbackError) {
-          console.warn('⚠️ Modelo gemini-1.5-pro também falhou:', fallbackError.message)
-          const finalError = new Error(`Todos os modelos Gemini falharam. Erro gemini-1.5-flash: ${lastError.message}, Erro gemini-1.5-pro: ${fallbackError.message}`)
-          finalError.originalError = fallbackError
-          finalError.modelsTried = ['gemini-1.5-flash', 'gemini-1.5-pro']
-          throw finalError
+        } catch (error) {
+          console.warn(`⚠️ Modelo ${modelName} falhou:`, error.message)
+          lastError = error
+          
+          // Se não for erro de modelo não encontrado, não tentar outros modelos
+          const errorMessage = error.message || String(error)
+          if (!errorMessage.includes('404') && 
+              !errorMessage.includes('not found') && 
+              !errorMessage.includes('is not found') &&
+              !errorMessage.includes('not supported')) {
+            throw error
+          }
+          
+          // Continuar tentando próximo modelo
+          continue
         }
       }
+      
+      // Se todos os modelos falharam
+      const finalError = new Error(`Todos os modelos Gemini falharam. Último erro: ${lastError?.message}`)
+      finalError.originalError = lastError
+      finalError.modelsTried = modelsToTry
+      throw finalError
     }
 
     let report

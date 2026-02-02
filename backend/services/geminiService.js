@@ -198,20 +198,34 @@ const generateExecutiveReport = async (data) => {
     }
     console.log('✅ Gemini AI configurado e pronto para gerar relatório');
 
-    // Usar gemini-1.5-flash como modelo padrão (mais estável e compatível com v1beta)
-    // Se não disponível, tentar gemini-1.5-pro como fallback
+    // Tentar modelos com sufixos completos primeiro (mais compatíveis)
+    // Ordem: flash-001, flash, pro-001, pro
+    const modelsToTry = [
+      'gemini-1.5-flash-001',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro-001',
+      'gemini-1.5-pro',
+      'gemini-pro' // Fallback final
+    ];
+    
     let model;
-    try {
-      model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      console.log('✅ Usando modelo: gemini-1.5-flash');
-    } catch (error) {
-      console.warn('⚠️ gemini-1.5-flash não disponível, tentando gemini-1.5-pro');
+    let lastError = null;
+    
+    for (const modelName of modelsToTry) {
       try {
-        model = ai.getGenerativeModel({ model: 'gemini-1.5-pro' });
-        console.log('✅ Usando modelo: gemini-1.5-pro');
-      } catch (fallbackError) {
-        throw new Error(`Nenhum modelo Gemini disponível. Erro gemini-1.5-flash: ${error.message}, Erro gemini-1.5-pro: ${fallbackError.message}`);
+        model = ai.getGenerativeModel({ model: modelName });
+        console.log(`✅ Usando modelo: ${modelName}`);
+        break; // Modelo funcionou, sair do loop
+      } catch (error) {
+        console.warn(`⚠️ Modelo ${modelName} não disponível:`, error.message);
+        lastError = error;
+        // Continuar tentando próximo modelo
+        continue;
       }
+    }
+    
+    if (!model) {
+      throw new Error(`Nenhum modelo Gemini disponível. Último erro: ${lastError?.message}`);
     }
     
     // Preparar dados para o prompt
