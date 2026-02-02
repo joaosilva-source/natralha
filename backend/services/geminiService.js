@@ -198,36 +198,6 @@ const generateExecutiveReport = async (data) => {
     }
     console.log('✅ Gemini AI configurado e pronto para gerar relatório');
 
-    // Tentar modelos com sufixos completos primeiro (mais compatíveis)
-    // Ordem: flash-001, flash, pro-001, pro
-    const modelsToTry = [
-      'gemini-1.5-flash-001',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro-001',
-      'gemini-1.5-pro',
-      'gemini-pro' // Fallback final
-    ];
-    
-    let model;
-    let lastError = null;
-    
-    for (const modelName of modelsToTry) {
-      try {
-        model = ai.getGenerativeModel({ model: modelName });
-        console.log(`✅ Usando modelo: ${modelName}`);
-        break; // Modelo funcionou, sair do loop
-      } catch (error) {
-        console.warn(`⚠️ Modelo ${modelName} não disponível:`, error.message);
-        lastError = error;
-        // Continuar tentando próximo modelo
-        continue;
-      }
-    }
-    
-    if (!model) {
-      throw new Error(`Nenhum modelo Gemini disponível. Último erro: ${lastError?.message}`);
-    }
-    
     // Preparar dados para o prompt
     let dataSummary = '';
     if (typeof data === 'string') {
@@ -302,8 +272,48 @@ IMPORTANTE:
 - Mantenha o tom profissional, analítico e humano
 - Use exemplos concretos extraídos dos dados quando possível`;
 
-    const result = await model.generateContent(prompt);
-    const report = result.response.text();
+    // Tentar modelos com sufixos completos primeiro (mais compatíveis)
+    // IMPORTANTE: Tentar realmente usar o modelo (generateContent) antes de considerar sucesso
+    const modelsToTry = [
+      'gemini-1.5-flash-001',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro-001',
+      'gemini-1.5-pro',
+      'gemini-pro' // Fallback final
+    ];
+    
+    let report = null;
+    let lastError = null;
+    
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`🔄 Tentando modelo Gemini: ${modelName}`);
+        const model = ai.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        report = result.response.text();
+        console.log(`✅ Sucesso com modelo: ${modelName}`);
+        break; // Modelo funcionou, sair do loop
+      } catch (error) {
+        console.warn(`⚠️ Modelo ${modelName} falhou:`, error.message);
+        lastError = error;
+        
+        // Se não for erro de modelo não encontrado, não tentar outros modelos
+        const errorMessage = error.message || String(error);
+        if (!errorMessage.includes('404') && 
+            !errorMessage.includes('not found') && 
+            !errorMessage.includes('is not found') &&
+            !errorMessage.includes('not supported')) {
+          throw error; // Erro diferente de "modelo não encontrado", propagar
+        }
+        
+        // Continuar tentando próximo modelo
+        continue;
+      }
+    }
+    
+    if (!report) {
+      throw new Error(`Todos os modelos Gemini falharam. Último erro: ${lastError?.message}`);
+    }
 
     return {
       success: true,

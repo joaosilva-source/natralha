@@ -575,11 +575,103 @@ router.post('/report', async (req, res) => {
         error: 'Serviço de IA não disponível'
       });
     }
-    const result = await gemini.generateExecutiveReport(data);
+    let result = await gemini.generateExecutiveReport(data);
+    
+    // Se Gemini falhar, tentar Groq como fallback
+    if (!result.success) {
+      const errorMessage = result.error || '';
+      const isModelNotFound = errorMessage.includes('não disponível') || 
+                             errorMessage.includes('404') ||
+                             errorMessage.includes('not found');
+      
+      if (isModelNotFound) {
+        global.emitLog('warning', 'POST /api/sociais/report - Gemini falhou, tentando Groq como fallback');
+        
+        // Preparar prompt para Groq
+        let prompt = '';
+        if (Array.isArray(data)) {
+          const dataSummary = data.slice(0, 50).map((item, index) => {
+            if (typeof item === 'object') {
+              const network = item.socialNetwork || 'N/A';
+              const sentiment = item.sentiment || 'N/A';
+              const reason = item.contactReason || 'N/A';
+              const message = (item.messageText || '').substring(0, 100);
+              return `${index + 1}. Rede: ${network} | Sentimento: ${sentiment} | Motivo: ${reason} | Mensagem: ${message}`;
+            }
+            return `${index + 1}. ${JSON.stringify(item)}`;
+          }).join('\n');
+          
+          prompt = `Contexto: Você é um Especialista em Customer Experience e Data Analytics. Sua tarefa é transformar dados brutos de interações em um Relatório Executivo de alto nível para a gestão.
+
+Use Markdown com hierarquia clara. Tom profissional, analítico e humano. Foco em insights acionáveis.
+
+DADOS COLETADOS:
+Total de interações: ${data.length}
+${dataSummary}
+
+ESTRUTURA OBRIGATÓRIA:
+# 📊 Relatório Executivo de CX: Performance e Diagnóstico
+## 1. Visão Geral
+## 2. Insights Estratégicos
+## 3. Análise Integrada: Plataforma e Sentimento
+## 4. Pontos de Atrito
+## 5. Action Plan (Recomendações Acionáveis)
+## 6. Conclusão e Próximos Passos`;
+        } else {
+          prompt = String(data).substring(0, 4000);
+        }
+        
+        // Tentar usar Groq
+        try {
+          let Groq;
+          try {
+            Groq = require('groq-sdk');
+          } catch (error) {
+            throw new Error('Groq SDK não disponível');
+          }
+          
+          const GROQ_API_KEY = process.env.GROQ_API_KEY;
+          if (!GROQ_API_KEY) {
+            throw new Error('GROQ_API_KEY não configurada');
+          }
+          
+          const groq = new Groq({ apiKey: GROQ_API_KEY });
+          const completion = await groq.chat.completions.create({
+            messages: [
+              {
+                role: 'system',
+                content: 'Você é um consultor sênior de CX (Customer Experience). Escreva relatórios executivos narrativos, profissionais e humanos em formato Markdown.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            model: 'llama-3.1-8b-instant',
+            temperature: 0.7,
+            max_tokens: 4000
+          });
+          
+          const groqReport = completion.choices[0]?.message?.content || '';
+          if (groqReport) {
+            result = {
+              success: true,
+              data: groqReport,
+              source: 'groq'
+            };
+            global.emitLog('success', 'POST /api/sociais/report - Relatório gerado com Groq (fallback)');
+          } else {
+            throw new Error('Resposta vazia do Groq');
+          }
+        } catch (groqError) {
+          global.emitLog('error', `POST /api/sociais/report - Groq também falhou: ${groqError.message}`);
+          // Manter erro original do Gemini
+        }
+    }
     
     if (result.success) {
       global.emitTraffic('Sociais', 'completed', 'Concluído - Relatório gerado com sucesso');
-      global.emitLog('success', 'POST /api/sociais/report - Relatório gerado com sucesso');
+      global.emitLog('success', `POST /api/sociais/report - Relatório gerado com sucesso${result.source ? ' (via ' + result.source + ')' : ''}`);
       
       // INBOUND: Resposta para o frontend
       global.emitJsonInput(result);
