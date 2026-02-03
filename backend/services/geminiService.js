@@ -272,38 +272,56 @@ IMPORTANTE:
 - Mantenha o tom profissional, analítico e humano
 - Use exemplos concretos extraídos dos dados quando possível`;
 
-    // Tentar modelos com sufixos completos primeiro (mais compatíveis)
-    // IMPORTANTE: Tentar realmente usar o modelo (generateContent) antes de considerar sucesso
-    const modelsToTry = [
-      'gemini-1.5-flash-001',
+    // PRIMEIRO: Tentar usar API v1 diretamente via HTTP (mais confiável que SDK v1beta)
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const axios = require('axios');
+    const modelsToTryV1 = [
       'gemini-1.5-flash',
-      'gemini-1.5-pro-001',
       'gemini-1.5-pro',
-      'gemini-pro' // Fallback final
+      'gemini-pro'
     ];
     
     let report = null;
     let lastError = null;
     
-    for (const modelName of modelsToTry) {
+    // Tentar API v1 diretamente via HTTP primeiro
+    for (const modelName of modelsToTryV1) {
       try {
-        console.log(`🔄 Tentando modelo Gemini: ${modelName}`);
-        const model = ai.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        report = result.response.text();
-        console.log(`✅ Sucesso com modelo: ${modelName}`);
-        break; // Modelo funcionou, sair do loop
+        console.log(`🔄 Tentando modelo Gemini via API v1: ${modelName}`);
+        
+        const response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }]
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 60000 // 60 segundos
+          }
+        );
+        
+        if (response.data && response.data.candidates && response.data.candidates[0] && response.data.candidates[0].content) {
+          report = response.data.candidates[0].content.parts[0].text;
+          console.log(`✅ Sucesso com modelo via API v1: ${modelName}`);
+          break;
+        } else {
+          throw new Error('Resposta vazia da API v1');
+        }
       } catch (error) {
-        console.warn(`⚠️ Modelo ${modelName} falhou:`, error.message);
+        const statusCode = error.response?.status;
+        const errorMsg = error.response?.data?.error?.message || error.message;
+        console.warn(`⚠️ Modelo ${modelName} via API v1 falhou (${statusCode || 'erro'}):`, errorMsg);
         lastError = error;
         
-        // Se não for erro de modelo não encontrado, não tentar outros modelos
-        const errorMessage = error.message || String(error);
-        if (!errorMessage.includes('404') && 
-            !errorMessage.includes('not found') && 
-            !errorMessage.includes('is not found') &&
-            !errorMessage.includes('not supported')) {
-          throw error; // Erro diferente de "modelo não encontrado", propagar
+        // Se não for erro 404, continuar tentando próximo modelo
+        if (statusCode && statusCode !== 404) {
+          continue;
         }
         
         // Continuar tentando próximo modelo
@@ -311,8 +329,35 @@ IMPORTANTE:
       }
     }
     
+    // FALLBACK: Tentar SDK v1beta se API v1 falhar completamente
     if (!report) {
-      throw new Error(`Todos os modelos Gemini falharam. Último erro: ${lastError?.message}`);
+      console.log('⚠️ API v1 falhou, tentando SDK v1beta como fallback...');
+      const modelsToTrySDK = [
+        'gemini-1.5-flash-001',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro-001',
+        'gemini-1.5-pro',
+        'gemini-pro'
+      ];
+      
+      for (const modelName of modelsToTrySDK) {
+        try {
+          console.log(`🔄 Tentando modelo Gemini via SDK: ${modelName}`);
+          const model = ai.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          report = result.response.text();
+          console.log(`✅ Sucesso com modelo via SDK: ${modelName}`);
+          break;
+        } catch (error) {
+          console.warn(`⚠️ Modelo ${modelName} via SDK falhou:`, error.message);
+          lastError = error;
+          continue;
+        }
+      }
+    }
+    
+    if (!report) {
+      throw new Error(`Todos os modelos Gemini falharam (API v1 e SDK). Último erro: ${lastError?.response?.data?.error?.message || lastError?.message || 'Desconhecido'}`);
     }
 
     return {
