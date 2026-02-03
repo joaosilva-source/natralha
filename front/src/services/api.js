@@ -3,7 +3,36 @@ import axios from 'axios'
 
 // URL base da API - usar caminho relativo quando servido pelo mesmo servidor
 // ou URL completa via variável de ambiente para desenvolvimento/deploy separado
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/sociais'
+// IMPORTANTE: Se servido pelo Render, sempre usar caminho relativo (mesmo servidor)
+const getApiBaseUrl = () => {
+  // Se há variável de ambiente definida, usar ela
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // Se estamos no navegador, verificar o hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    
+    // Se estamos no Render (onrender.com), usar caminho relativo
+    if (hostname.includes('onrender.com')) {
+      return '/api/sociais'
+    }
+    
+    // Se estamos em localhost, usar backend local
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8090/api/sociais'
+    }
+    
+    // Para qualquer outro domínio, usar caminho relativo (assume mesmo servidor)
+    return '/api/sociais'
+  }
+  
+  // Fallback: caminho relativo
+  return '/api/sociais'
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 const api = axios.create({
   baseURL: API_BASE_URL,
