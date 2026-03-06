@@ -68,16 +68,27 @@ else {
   console.log('⚠️ Usando dotenv padrão (nenhum arquivo .env encontrado)');
 }
 
-// CRÍTICO: Sanitizar MONGO_ENV/MONGODB_URI logo após dotenv — mongodb+srv NÃO pode ter porta (MongoParseError no Render)
+// Remover porta do host em URIs mongodb+srv (entre último @ e / ou ?) — evita MongoParseError no Render
+function stripPortFromMongoSrvUri(raw) {
+  if (!raw || typeof raw !== 'string' || !raw.startsWith('mongodb+srv://')) return raw;
+  const atIdx = raw.lastIndexOf('@');
+  if (atIdx === -1) return raw;
+  const slashAfter = raw.indexOf('/', atIdx);
+  const qAfter = raw.indexOf('?', atIdx);
+  const endHost = slashAfter === -1 ? (qAfter === -1 ? raw.length : qAfter) : (qAfter === -1 ? slashAfter : Math.min(slashAfter, qAfter));
+  const hostSegment = raw.slice(atIdx + 1, endHost);
+  const portMatch = hostSegment.match(/:(\d+)$/);
+  if (!portMatch) return raw;
+  const port = portMatch[0];
+  return raw.slice(0, endHost - port.length) + raw.slice(endHost);
+}
 (function sanitizeMongoEnv() {
   const raw = process.env.MONGO_ENV || process.env.MONGODB_URI;
-  if (!raw || typeof raw !== 'string' || !raw.startsWith('mongodb+srv://')) return;
-  const out = raw
-    .replace(/\.mongodb\.net:\d+/g, '.mongodb.net')
-    .replace(/(@[^@]+):(\d+)(?=\/|\?|$)/g, '$1');
+  if (!raw) return;
+  const out = stripPortFromMongoSrvUri(raw);
   if (out !== raw) {
     process.env.MONGO_ENV = out;
-    if (process.env.MONGODB_URI) process.env.MONGODB_URI = out;
+    process.env.MONGODB_URI = out;
   }
 })();
 
@@ -270,13 +281,10 @@ const formatArticleContent = (content) => {
 
 // MongoDB Connection
 // Aceita tanto MONGODB_URI (padrão) quanto MONGO_ENV (legado)
-// Sanitizar: mongodb+srv não pode ter porta (ex.: :27017) — o driver rejeita
+// Sanitizar: mongodb+srv não pode ter porta — stripPortFromMongoSrvUri remove do segmento do host
 function sanitizeMongoUri(raw) {
   if (!raw || typeof raw !== 'string') return raw;
-  if (!raw.startsWith('mongodb+srv://')) return raw;
-  return raw
-    .replace(/\.mongodb\.net:\d+/g, '.mongodb.net')
-    .replace(/(@[^@]+):(\d+)(?=\/|\?|$)/g, '$1');
+  return stripPortFromMongoSrvUri(raw);
 }
 const uri = sanitizeMongoUri(config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
 
