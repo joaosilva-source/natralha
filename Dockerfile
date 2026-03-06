@@ -32,11 +32,14 @@ RUN ls -la ../public/ || echo "⚠️ Pasta public não encontrada após build"
 
 WORKDIR /app
 
+# Git necessário para npm install (dependências que usam URLs git)
+RUN apk add --no-cache git
+
 # Copiar arquivos de dependências do backend
 COPY backend/package*.json ./
 
 # Instalar dependências do backend
-RUN npm install --only=production --legacy-peer-deps || npm install --only=production
+RUN npm install --omit=dev --legacy-peer-deps || npm install --omit=dev
 
 # Copiar código da aplicação (backend)
 COPY backend/ ./
