@@ -44,6 +44,9 @@ build/
 .next/
 out/
 
+# Backend/public NÃO deve sobrescrever o build do frontend (Vite gera em /app/public)
+backend/public/
+
 # Arquivos de configuração local
 vercel.json
 .vercel/
