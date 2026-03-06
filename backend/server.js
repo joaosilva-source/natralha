@@ -257,7 +257,13 @@ const formatArticleContent = (content) => {
 
 // MongoDB Connection
 // Aceita tanto MONGODB_URI (padrão) quanto MONGO_ENV (legado)
-const uri = config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI;
+// Sanitizar: mongodb+srv não pode ter porta (ex.: :27017) — o driver rejeita
+function sanitizeMongoUri(raw) {
+  if (!raw || typeof raw !== 'string') return raw;
+  if (!raw.startsWith('mongodb+srv://')) return raw;
+  return raw.replace(/(@[^:\/]+):\d+/, '$1');
+}
+const uri = sanitizeMongoUri(config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
 
 console.log('🔍 Verificando configuração MongoDB...');
 console.log('🔍 MONGODB_URI definida:', !!config.MONGODB_URI);
