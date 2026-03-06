@@ -3792,13 +3792,15 @@ app.use('/api/*', (req, res, next) => {
   });
 });
 
-// Servir arquivos estáticos da pasta public da raiz (DEPOIS das rotas da API)
-const publicPath = path.resolve(__dirname, '../public');
-console.log(`📁 [Static] Servindo arquivos estáticos de: ${publicPath}`);
+// Servir arquivos estáticos: no Docker/Render public está em ./public (mesmo dir que server.js)
+// Em dev local pode estar em ../public; path.resolve garante caminho absoluto
+const publicSameDir = path.resolve(__dirname, 'public');
+const publicParentDir = path.resolve(__dirname, '..', 'public');
+const publicPath = fs.existsSync(publicSameDir) ? publicSameDir : publicParentDir;
+console.log(`📁 [Static] __dirname: ${__dirname}, public: ${publicPath}, existe: ${fs.existsSync(publicPath)}`);
 
-// Verificar se a pasta public existe na inicialização
 if (!fs.existsSync(publicPath)) {
-  console.error(`❌ [Static] Pasta public não encontrada: ${publicPath}`);
+  console.error(`❌ [Static] Pasta public não encontrada. Tentado: ${publicSameDir} e ${publicParentDir}`);
 } else {
   console.log(`✅ [Static] Pasta public encontrada`);
   const assetsPath = path.join(publicPath, 'assets');
@@ -3847,11 +3849,7 @@ app.get('*', (req, res, next) => {
     return next(); // Retornar 404 para rotas de API não encontradas
   }
   
-  // Servir o index.html da pasta public da raiz (usar caminho absoluto)
-  const indexPath = path.resolve(__dirname, '../public/index.html');
-  console.log(`📄 [Catch-all] Servindo index.html para rota SPA: ${req.path}`);
-  
-  // Verificar se o arquivo existe antes de servir
+  const indexPath = path.resolve(publicPath, 'index.html');
   if (!fs.existsSync(indexPath)) {
     console.error(`❌ [Catch-all] Arquivo index.html não encontrado em: ${indexPath}`);
     return res.status(404).send('Arquivo index.html não encontrado. Verifique se o build do frontend foi executado.');
