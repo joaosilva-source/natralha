@@ -77,15 +77,9 @@ function stripPortFromMongoSrvUri(raw) {
   const qAfter = raw.indexOf('?', atIdx);
   const endHost = slashAfter === -1 ? (qAfter === -1 ? raw.length : qAfter) : (qAfter === -1 ? slashAfter : Math.min(slashAfter, qAfter));
   const hostSegment = raw.slice(atIdx + 1, endHost);
-  const portMatch = hostSegment.match(/:(\d+)$/);
-  if (portMatch) {
-    const port = portMatch[0];
-    return raw.slice(0, endHost - port.length) + raw.slice(endHost);
-  }
-  const afterAt = raw.slice(atIdx + 1);
-  const cleaned = afterAt.replace(/:(\d+)(?=[\/\?]|$)/, '');
-  if (cleaned !== afterAt) return raw.slice(0, atIdx + 1) + cleaned;
-  return raw;
+  const hostNoPort = hostSegment.replace(/:(\d+)/g, '');
+  if (hostNoPort === hostSegment) return raw;
+  return raw.slice(0, atIdx + 1) + hostNoPort + raw.slice(endHost);
 }
 (function sanitizeMongoEnv() {
   const raw = process.env.MONGO_ENV || process.env.MONGODB_URI;
@@ -314,11 +308,15 @@ if (uri) {
     });
   } catch (parseErr) {
     if (parseErr.name === 'MongoParseError' && parseErr.message && parseErr.message.includes('port number')) {
-      const fallback = uri.replace(/:(\d+)(?=[\/\?]|$)/g, '');
-      if (fallback !== uri) {
-        console.warn('⚠️ MongoParseError (porta): removendo porta da URI e tentando novamente');
-        client = new MongoClient(fallback, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 20000, socketTimeoutMS: 45000 });
-      } else throw parseErr;
+      const atIdx = uri.lastIndexOf('@');
+      const slash = uri.indexOf('/', atIdx);
+      const q = uri.indexOf('?', atIdx);
+      const endHost = slash === -1 ? (q === -1 ? uri.length : q) : (q === -1 ? slash : Math.min(slash, q));
+      const hostSeg = uri.slice(atIdx + 1, endHost);
+      const hostNoPort = hostSeg.replace(/:(\d+)/g, '');
+      const fallback = uri.slice(0, atIdx + 1) + hostNoPort + uri.slice(endHost);
+      console.warn('⚠️ MongoParseError (porta): removendo toda porta do host e tentando novamente');
+      client = new MongoClient(fallback, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 20000, socketTimeoutMS: 45000 });
     } else throw parseErr;
   }
 }
