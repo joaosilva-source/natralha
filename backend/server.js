@@ -68,6 +68,19 @@ else {
   console.log('⚠️ Usando dotenv padrão (nenhum arquivo .env encontrado)');
 }
 
+// CRÍTICO: Sanitizar MONGO_ENV/MONGODB_URI logo após dotenv — mongodb+srv NÃO pode ter porta (MongoParseError no Render)
+(function sanitizeMongoEnv() {
+  const raw = process.env.MONGO_ENV || process.env.MONGODB_URI;
+  if (!raw || typeof raw !== 'string' || !raw.startsWith('mongodb+srv://')) return;
+  const out = raw
+    .replace(/\.mongodb\.net:\d+/g, '.mongodb.net')
+    .replace(/(@[^@]+):(\d+)(?=\/|\?|$)/g, '$1');
+  if (out !== raw) {
+    process.env.MONGO_ENV = out;
+    if (process.env.MONGODB_URI) process.env.MONGODB_URI = out;
+  }
+})();
+
 // Carregar configuração local para testes
 const localConfig = require('./config-local');
 
@@ -261,7 +274,9 @@ const formatArticleContent = (content) => {
 function sanitizeMongoUri(raw) {
   if (!raw || typeof raw !== 'string') return raw;
   if (!raw.startsWith('mongodb+srv://')) return raw;
-  return raw.replace(/(@[^:\/]+):\d+/, '$1');
+  return raw
+    .replace(/\.mongodb\.net:\d+/g, '.mongodb.net')
+    .replace(/(@[^@]+):(\d+)(?=\/|\?|$)/g, '$1');
 }
 const uri = sanitizeMongoUri(config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
 
