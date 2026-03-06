@@ -68,7 +68,7 @@ else {
   console.log('⚠️ Usando dotenv padrão (nenhum arquivo .env encontrado)');
 }
 
-// Remover porta do host em URIs mongodb+srv (entre último @ e / ou ?) — evita MongoParseError no Render
+// Remover porta do host em URIs mongodb+srv — evita MongoParseError no Render
 function stripPortFromMongoSrvUri(raw) {
   if (!raw || typeof raw !== 'string' || !raw.startsWith('mongodb+srv://')) return raw;
   const atIdx = raw.lastIndexOf('@');
@@ -78,9 +78,14 @@ function stripPortFromMongoSrvUri(raw) {
   const endHost = slashAfter === -1 ? (qAfter === -1 ? raw.length : qAfter) : (qAfter === -1 ? slashAfter : Math.min(slashAfter, qAfter));
   const hostSegment = raw.slice(atIdx + 1, endHost);
   const portMatch = hostSegment.match(/:(\d+)$/);
-  if (!portMatch) return raw;
-  const port = portMatch[0];
-  return raw.slice(0, endHost - port.length) + raw.slice(endHost);
+  if (portMatch) {
+    const port = portMatch[0];
+    return raw.slice(0, endHost - port.length) + raw.slice(endHost);
+  }
+  const afterAt = raw.slice(atIdx + 1);
+  const cleaned = afterAt.replace(/:(\d+)(?=[\/\?]|$)/, '');
+  if (cleaned !== afterAt) return raw.slice(0, atIdx + 1) + cleaned;
+  return raw;
 }
 (function sanitizeMongoEnv() {
   const raw = process.env.MONGO_ENV || process.env.MONGODB_URI;
@@ -286,7 +291,8 @@ function sanitizeMongoUri(raw) {
   if (!raw || typeof raw !== 'string') return raw;
   return stripPortFromMongoSrvUri(raw);
 }
-const uri = sanitizeMongoUri(config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
+let uri = sanitizeMongoUri(config.MONGODB_URI || process.env.MONGO_ENV || process.env.MONGODB_URI);
+uri = stripPortFromMongoSrvUri(uri);
 
 console.log('🔍 Verificando configuração MongoDB...');
 console.log('🔍 MONGODB_URI definida:', !!config.MONGODB_URI);
@@ -298,11 +304,24 @@ if (uri) {
   console.warn('⚠️ APIs que dependem do MongoDB não funcionarão');
   console.warn('⚠️ Configure MONGODB_URI ou MONGO_ENV nas variáveis de ambiente');
 }
-const client = uri ? new MongoClient(uri, {
-  serverSelectionTimeoutMS: 15000, // 15 segundos timeout (otimizado para us-east-1)
-  connectTimeoutMS: 20000, // 20 segundos timeout
-  socketTimeoutMS: 45000, // 45 segundos timeout
-}) : null;
+let client = null;
+if (uri) {
+  try {
+    client = new MongoClient(uri, {
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 20000,
+      socketTimeoutMS: 45000,
+    });
+  } catch (parseErr) {
+    if (parseErr.name === 'MongoParseError' && parseErr.message && parseErr.message.includes('port number')) {
+      const fallback = uri.replace(/:(\d+)(?=[\/\?]|$)/g, '');
+      if (fallback !== uri) {
+        console.warn('⚠️ MongoParseError (porta): removendo porta da URI e tentando novamente');
+        client = new MongoClient(fallback, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 20000, socketTimeoutMS: 45000 });
+      } else throw parseErr;
+    } else throw parseErr;
+  }
+}
 
 // Conectar ao MongoDB uma vez no início
 let isConnected = false;
