@@ -149,7 +149,80 @@ const broadcastAudioEvent = (audioId, status, data = {}) => {
   broadcastEvent(eventData, 'audio-analysis');
 };
 
-// Middleware de segurança
+// Tratamento explícito de requisições OPTIONS (preflight) - DEVE VIR PRIMEIRO
+// Handler manual para garantir que preflight sempre retorne headers CORS corretos
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  // Permite origens do Render, Vercel, Cloud Run e localhost
+  const isAllowed = !origin || 
+    origin.includes('.onrender.com') || 
+    origin.includes('.vercel.app') || 
+    origin.includes('.run.app') ||
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('https://localhost');
+  
+  res.setHeader('Access-Control-Allow-Origin', isAllowed && origin ? origin : '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-User-Email, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
+
+// Configuração CORS - DEVE VIR ANTES DO HELMET
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    // Lista de origens permitidas
+    const allowedOrigins = [
+      'https://natralha.onrender.com',
+      'https://natralha-rrm3.onrender.com',
+      'https://velohub-backend.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'https://velohub-278491073220.us-east1.run.app',
+      'https://staging-skynet-278491073220.us-east1.run.app'
+    ];
+    
+    // Permitir todas as origens do Render.com
+    if (origin.includes('.onrender.com') || origin.includes('.vercel.app') || origin.includes('.run.app')) {
+      return callback(null, true);
+    }
+    
+    // Verificar se a origem está na lista permitida
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Em desenvolvimento, permitir todas as origens
+      if (process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        callback(null, true); // Permitir todas para evitar problemas
+      }
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type", 
+    "Authorization", 
+    "X-Requested-With", 
+    "X-User-Email",
+    "Accept",
+    "Origin",
+    "Access-Control-Request-Method",
+    "Access-Control-Request-Headers"
+  ],
+  exposedHeaders: ["Content-Length", "Content-Type"],
+  maxAge: 86400, // 24 horas
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Middleware de segurança - AJUSTADO PARA NÃO BLOQUEAR CORS
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -160,19 +233,16 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       connectSrc: ["'self'", "ws:", "wss:", "https:", "*"]
     }
-  }
-}));
-app.use(cors({
-  origin: "*", // Permitir todas as origens para Vercel
-  credentials: false, // Desabilitar credentials para Vercel
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-User-Email"]
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
 }));
 
-// Rate limiting
+// Rate limiting - EXCLUIR OPTIONS (preflight requests)
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000 // máximo 1000 requests por IP
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // máximo 1000 requests por IP
+  skip: (req) => req.method === 'OPTIONS' // Não aplicar rate limit em preflight requests
 });
 app.use('/api/', limiter);
 
