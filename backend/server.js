@@ -352,6 +352,21 @@ app.get('/api/test', async (req, res) => {
   }
 });
 
+// ===== ROTAS SOCIAIS (Social Command Center) - Registrar cedo para garantir disponibilidade =====
+try {
+  console.log('📦 Carregando rotas de Sociais (início)...');
+  const sociaisRouter = require('./routes/sociais');
+  if (sociaisRouter) {
+    app.use('/api/sociais', sociaisRouter);
+    app.get('/api/sociais/test', (req, res) => {
+      res.json({ success: true, message: 'Rotas de Sociais estão funcionando', timestamp: new Date().toISOString() });
+    });
+    console.log('✅ Rotas de Sociais registradas (POST /tabulation, GET /feed, etc.)');
+  }
+} catch (error) {
+  console.error('❌ Erro ao registrar rotas de Sociais:', error.message);
+}
+
 // Test chatbot endpoint
 app.get('/api/chatbot/test', async (req, res) => {
   try {
@@ -3682,43 +3697,10 @@ try {
   console.error('Detalhes do erro:', error);
 }
 
-// Registrar rotas de Sociais
-try {
-  console.log('📦 Carregando rotas de Sociais...');
-  const sociaisRouter = require('./routes/sociais');
-  
-  // Verificar se o router foi carregado corretamente
-  if (!sociaisRouter) {
-    throw new Error('Router de Sociais não foi carregado corretamente');
-  }
-  
-  app.use('/api/sociais', sociaisRouter);
-  console.log('✅ Rotas de Sociais registradas com sucesso!');
-  console.log('📋 Rotas disponíveis:');
-  console.log('   - POST /api/sociais/tabulation');
-  console.log('   - GET /api/sociais/tabulations');
-  console.log('   - GET /api/sociais/dashboard/metrics');
-  console.log('   - GET /api/sociais/dashboard/charts');
-  console.log('   - GET /api/sociais/rating/average');
-  console.log('   - GET /api/sociais/feed');
-  
-  // Adicionar rota de teste para verificar se as rotas estão funcionando
-  app.get('/api/sociais/test', (req, res) => {
-    res.json({
-      success: true,
-      message: 'Rotas de Sociais estão funcionando',
-      timestamp: new Date().toISOString()
-    });
-  });
-} catch (error) {
-  console.error('❌ Erro ao registrar rotas de Sociais:', error.message);
-  console.error('Stack:', error.stack);
-  console.error('Detalhes do erro:', error);
-}
-
 // Middleware 404 para rotas de API não encontradas (ANTES do catch-all)
 // IMPORTANTE: Esta rota deve ser a ÚLTIMA rota de API, depois de todas as outras
-app.use('/api/*', (req, res, next) => {
+// Usar '/api' para garantir match em todas as sub-rotas (Express trata como prefixo)
+app.use('/api', (req, res, next) => {
   // Se a resposta já foi enviada, não fazer nada
   if (res.headersSent) {
     return next();
