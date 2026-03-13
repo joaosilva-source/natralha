@@ -175,10 +175,9 @@ app.use(cors({
     // Permitir requisições sem origin (mobile apps, Postman, etc)
     if (!origin) return callback(null, true);
     
-    // Lista de origens permitidas (Natralha tabulações + dev)
+    // Lista de origens permitidas (Tabulações - srv-d6lh83fkijhs73dngqg0)
     const allowedOrigins = [
-      'https://natralha.onrender.com',
-      'https://natralha-rrm3.onrender.com',
+      'https://tabulacoes.onrender.com',
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:8080'
