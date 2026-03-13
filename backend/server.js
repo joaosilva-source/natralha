@@ -175,16 +175,13 @@ app.use(cors({
     // Permitir requisições sem origin (mobile apps, Postman, etc)
     if (!origin) return callback(null, true);
     
-    // Lista de origens permitidas
+    // Lista de origens permitidas (Natralha tabulações + dev)
     const allowedOrigins = [
       'https://natralha.onrender.com',
       'https://natralha-rrm3.onrender.com',
-      'https://velohub-backend.onrender.com',
       'http://localhost:3000',
       'http://localhost:5173',
-      'http://localhost:8080',
-      'https://velohub-278491073220.us-east1.run.app',
-      'https://staging-skynet-278491073220.us-east1.run.app'
+      'http://localhost:8080'
     ];
     
     // Permitir todas as origens do Render.com
