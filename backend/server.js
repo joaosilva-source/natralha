@@ -3721,7 +3721,9 @@ app.use('/api', (req, res, next) => {
       '/api/sociais/tabulations',
       '/api/sociais/dashboard/metrics',
       '/api/sociais/dashboard/charts',
+      '/api/sociais/feed',
       '/api/sociais/rating/average',
+      '/api/sociais/test',
       '/api/test',
       '/api/health'
     ]

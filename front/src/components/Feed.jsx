@@ -17,6 +17,7 @@ const Feed = ({ selectedWord, wordCloudWords = [] }) => {
     keyword: ''
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const socialNetworks = ['Instagram', 'Facebook', 'TikTok', 'Messenger', 'YouTube', 'PlayStore']
   const reasons = ['Produto', 'Suporte', 'Bug', 'Elogio', 'Reclamação', 'Oculto', 'Outro']
@@ -35,27 +36,20 @@ const Feed = ({ selectedWord, wordCloudWords = [] }) => {
 
   const loadFeed = async () => {
     setLoading(true)
+    setError(null)
     try {
       const result = await getFeed(filters)
-      if (result.success) {
-        setFeedData(result.data || [])
-        console.log('📊 [Feed] Dados carregados:', {
-          total: result.data?.length || 0,
-          hasData: (result.data?.length || 0) > 0
-        })
-        // Log para debug - verificar datas recebidas
-        if (result.data && result.data.length > 0) {
-          console.log('📅 [Feed] Datas recebidas:', result.data.slice(0, 3).map(item => ({
-            _id: item._id,
-            clientName: item.clientName,
-            createdAt: item.createdAt,
-            createdAtType: typeof item.createdAt,
-            createdAtParsed: item.createdAt ? new Date(item.createdAt).toLocaleString('pt-BR') : null
-          })))
-        }
+      if (result?.success && result.data) {
+        setFeedData(result.data)
+        setError(null)
+        console.log('📊 [Feed] Dados carregados:', { total: result.data.length })
+      } else {
+        setFeedData([])
       }
-    } catch (error) {
-      console.error('Erro ao carregar feed:', error)
+    } catch (err) {
+      console.error('Erro ao carregar feed:', err)
+      setFeedData([])
+      setError(err?.message || 'Erro ao carregar feed. Verifique a conexão.')
     } finally {
       setLoading(false)
     }
@@ -79,34 +73,52 @@ const Feed = ({ selectedWord, wordCloudWords = [] }) => {
   const formatDate = (dateString) => {
     if (!dateString) return ''
     try {
-      const date = new Date(dateString)
+      // PROBLEMA: Se no MongoDB está 04/02/2026 09:00 mas aparece 03/02/2026 21:00,
+      // há uma diferença de 12 horas. Isso sugere que a data foi salva incorretamente.
+      // 
+      // SOLUÇÃO TEMPORÁRIA: Ajustar a data adicionando 12 horas para corrigir a exibição
+      // Isso é uma correção temporária até que o problema de salvamento seja resolvido
+      
+      let date
+      
+      // Interpretar a string como UTC
+      if (typeof dateString === 'string') {
+        if (dateString.endsWith('Z')) {
+          date = new Date(dateString)
+        } else if (dateString.includes('T')) {
+          date = new Date(dateString + 'Z')
+        } else {
+          date = new Date(dateString)
+        }
+      } else {
+        date = new Date(dateString)
+      }
+      
       // Verificar se a data é válida
       if (isNaN(date.getTime())) {
         console.warn('⚠️ [Feed] Data inválida:', dateString)
         return ''
       }
       
-      // Log para debug (apenas primeira vez)
-      if (!formatDate._logged) {
-        console.log('📅 [Feed] formatDate chamado:', {
-          input: dateString,
-          parsed: date.toISOString(),
-          local: date.toLocaleString('pt-BR'),
-          getDate: date.getDate(),
-          getMonth: date.getMonth() + 1,
-          getFullYear: date.getFullYear()
-        })
-        formatDate._logged = true
-      }
+      // CORREÇÃO: Adicionar 12 horas para corrigir a diferença
+      // Se aparece 03/02/2026 21:00 quando deveria ser 04/02/2026 09:00,
+      // adicionar 12 horas corrige: 03/02/2026 21:00 + 12h = 04/02/2026 09:00
+      const adjustedDate = new Date(date.getTime() + (12 * 60 * 60 * 1000))
       
-      // Formatar data no timezone local, mostrando apenas data e hora
-      return date.toLocaleString('pt-BR', {
+      // Formatar usando Intl.DateTimeFormat com timezone explícito do Brasil
+      const formatter = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: false
       })
+      
+      const formatted = formatter.format(adjustedDate)
+      
+      return formatted
     } catch (error) {
       console.error('❌ [Feed] Erro ao formatar data:', error, dateString)
       return ''
@@ -144,6 +156,26 @@ const Feed = ({ selectedWord, wordCloudWords = [] }) => {
     return (
       <div className="velohub-container">
         <p>Carregando feed...</p>
+      </div>
+    )
+  }
+
+  // Exibir erro de conexão/API
+  if (error) {
+    return (
+      <div className="velohub-container">
+        <div className="section-title" style={{ marginBottom: '16px' }}>Feed de Atendimento</div>
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '8px',
+          color: '#856404'
+        }}>
+          <strong>Erro ao carregar feed:</strong> {error}
+          <br />
+          <small>Verifique se o servidor está online e tente novamente.</small>
+        </div>
       </div>
     )
   }
